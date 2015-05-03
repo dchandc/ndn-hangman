@@ -1,21 +1,31 @@
 package com.example.cs217b.ndn_hangman;
 
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-
-import net.named_data.jndn.*;
+import android.view.View;
+import android.widget.Button;
 
 
 public class MainActivity extends ActionBarActivity {
-    private Face m_face;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        m_face = new Face("localhost");
+
+        Button button_new = (Button) findViewById(R.id.button_new);
+        button_new.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("clicks", "New Game button clicked");
+                Intent intent = new Intent(MainActivity.this, NewGameActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
 
