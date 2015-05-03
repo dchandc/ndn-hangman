@@ -5,13 +5,17 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import net.named_data.jndn.*;
+
 
 public class MainActivity extends ActionBarActivity {
+    private Face m_face;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        m_face = new Face("localhost");
     }
 
 
