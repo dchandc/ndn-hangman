@@ -9,6 +9,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
+import net.named_data.jndn.*;
+
 
 public class MainActivity extends ActionBarActivity {
 
