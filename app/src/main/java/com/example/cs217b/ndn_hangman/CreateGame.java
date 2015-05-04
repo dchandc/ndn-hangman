@@ -2,11 +2,15 @@ package com.example.cs217b.ndn_hangman;
 
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import net.named_data.jndn.*;
+import net.named_data.jndn.security.SecurityException;
+import net.named_data.jndn.transport.Transport;
 
+import java.io.IOException;
 
 public class CreateGame extends ActionBarActivity {
     private Face createGameFace;
@@ -17,7 +21,30 @@ public class CreateGame extends ActionBarActivity {
         setContentView(R.layout.activity_create_game);
 
         createGameFace = new Face("localhost");
-        
+        try {
+            createGameFace.setCommandSigningInfo(MainActivity.keychain, MainActivity.keychain.getDefaultCertificateName());
+        }
+        catch (SecurityException e) {
+            Log.d("SecurityException", e.getLocalizedMessage());
+        }
+        try {
+            createGameFace.registerPrefix(new Name("/localhost/hangman/lobby/available/room1"),
+                    new OnInterest() {
+                        @Override
+                        public void onInterest(Name prefix, Interest interest, Transport transport, long interestFilterId) {
+
+                        }
+                    },
+                    new OnRegisterFailed() {
+                        @Override
+                        public void onRegisterFailed(Name prefix) {
+
+                        }
+                    }
+            );
+        } catch (Exception er) {
+            Log.d("Exception", er.getLocalizedMessage());
+        }
     }
 
     @Override
