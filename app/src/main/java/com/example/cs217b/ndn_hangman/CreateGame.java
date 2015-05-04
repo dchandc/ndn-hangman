@@ -1,48 +1,29 @@
 package com.example.cs217b.ndn_hangman;
 
-import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
 
 import net.named_data.jndn.*;
-import net.named_data.jndn.security.KeyChain;
 
 
-public class MainActivity extends ActionBarActivity {
-    public static KeyChain keychain;
+public class CreateGame extends ActionBarActivity {
+    private Face createGameFace;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_create_game);
 
-        Button button_new = (Button) findViewById(R.id.button_new);
-        button_new.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.i("clicks", "New Game button clicked");
-                Intent intent = new Intent(MainActivity.this, NewGameActivity.class);
-                startActivity(intent);
-            }
-        });
-
-        try {
-            MainActivity.keychain = new KeyChain();
-        }
-        catch (Exception exception) {
-            Log.d("Exception", "KeyChain exception in Main Activity");
-        }
+        createGameFace = new Face("localhost");
+        
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_create_game, menu);
         return true;
     }
 
