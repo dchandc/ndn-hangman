@@ -26,6 +26,8 @@ public class NewGameActivity extends ActionBarActivity {
             if (gs == null)
                 throw new NullPointerException("NewGame failed to init");
 
+            TextView tv = (TextView) findViewById(R.id.text_status);
+            tv.setText("Initializing game...\nIt is " + gs.players.get(0).name + "'s turn to choose a word.");
             updateScore(gs.players, gs.currentDrawerIndex, gs.currentGuesserIndex);
 
             /*
