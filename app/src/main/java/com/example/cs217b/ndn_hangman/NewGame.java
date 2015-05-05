@@ -31,10 +31,10 @@ public class NewGame {
             players.add(new AIPlayer("AIPlayer" + i));
         }
         */
-        players.add(new AIPlayer("AIPl"));
-        players.add(new AIPlayer("AIPla"));
-        players.add(new AIPlayer("AIPlay"));
-        players.add(new AIPlayer("AIPlayer"));
+        players.add(new AIPlayer("Bill"));
+        players.add(new AIPlayer("Bob"));
+        players.add(new AIPlayer("Jack"));
+        players.add(new AIPlayer("Jill"));
 
         Random rand = new Random();
         int firstDrawerIndex = rand.nextInt(players.size());

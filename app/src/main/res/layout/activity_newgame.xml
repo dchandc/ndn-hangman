@@ -71,7 +71,8 @@
                 android:id="@+id/text_status"
                 android:layout_gravity="center_horizontal"
                 android:layout_weight="0.33"
-                android:background="#ffffff" />
+                android:background="#d3d3d3"
+                android:textColor="#000000" />
 
             <RelativeLayout
                 android:layout_width="match_parent"

@@ -14,11 +14,23 @@ public class AIPlayer extends Player {
 
     @Override
     String chooseWord() {
-        return "hangman";
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return "abcdefghij";
     }
 
     @Override
     char chooseLetter(String letters) {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         Random rand = new Random();
         int index = rand.nextInt(letters.length());
         return letters.charAt(index);
