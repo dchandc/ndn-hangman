@@ -15,7 +15,7 @@ public class AIPlayer extends Player {
     @Override
     String chooseWord() {
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -26,7 +26,7 @@ public class AIPlayer extends Player {
     @Override
     char chooseLetter(String letters) {
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

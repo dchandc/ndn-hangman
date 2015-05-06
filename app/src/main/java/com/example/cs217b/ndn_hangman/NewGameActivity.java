@@ -5,6 +5,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -13,6 +14,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Random;
 
 /**
@@ -34,36 +37,22 @@ public class NewGameActivity extends ActionBarActivity {
         img_man = (ImageView) findViewById(R.id.image_man);
         btn_guess = (Button) findViewById(R.id.button_guess);
 
+        tv_status.setMovementMethod(new ScrollingMovementMethod());
+
         if (savedInstanceState == null)
             new GameTask(2).execute();
-        /*
-        try {
-            NewGame game = new NewGame(4);
-            GameState gs = game.init();
-            if (gs == null)
-                throw new NullPointerException("NewGame failed to init");
-
-            TextView tv = (TextView) findViewById(R.id.text_status);
-            tv.setText("Initializing game...\nIt is " + gs.players.get(0).name + "'s turn to choose a word.");
-            updateScore(gs.players, gs.currentDrawerIndex, gs.currentGuesserIndex);
-
-            while (gs.state != GameState.Stage.COMPLETE) {
-                gs = game.progress();
-                // Update UI here
-            }
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        }
-        */
     }
 
-    public class GameTask extends AsyncTask<Void, Integer, ArrayList<Player>> {
+    public class GameTask extends AsyncTask<Void, String, ArrayList<Player>> {
         private ArrayList<Player> players;
-        private static final int numberOfChances = 6;
-        private String allAvailableLetters = "abcdefghijklmnopqrstuvwxyz";
-        private int firstDrawerIndex = 0;
+        private final int numberOfChances = 5;
+        private final String allAvailableLetters = "abcdefghijklmnopqrstuvwxyz";
+        private final int guesserBonus = 100;
+        private final int drawerBonus = 100;
+        private int firstDrawerIndex;
         private int currentDrawerIndex;
         private int currentGuesserIndex;
+        private StringBuilder hangmanBuilder;
 
         public GameTask(int numberOfPlayers) {
             if (numberOfPlayers < 2 || numberOfPlayers > 4)
@@ -74,6 +63,8 @@ public class NewGameActivity extends ActionBarActivity {
                 players.add(new AIPlayer("AIPlayer" + i));
             }
 
+            hangmanBuilder = new StringBuilder("");
+
             Random rand = new Random();
             firstDrawerIndex = rand.nextInt(players.size());
             currentDrawerIndex = firstDrawerIndex;
@@ -83,12 +74,21 @@ public class NewGameActivity extends ActionBarActivity {
         @Override
         protected ArrayList<Player> doInBackground(Void... ignored) {
             do {
-                String availableLetters = "abcdefghijklmnopqrstuvwxyz";
+                // Begin new round
+                String availableLetters = allAvailableLetters;
                 int numberGuessedWrong = 0;
 
                 Player drawer = players.get(currentDrawerIndex);
-                String word = drawer.chooseWord();
-                Log.i("game", drawer.name + " chose the word '" + word + "'");
+                pause(1000);
+                publishProgress(drawer.name + "'s turn to choose a word.");
+
+                String chosenWord = drawer.chooseWord();
+                String remainingWord = chosenWord;
+                char[] tmpArray = new char[chosenWord.length()];
+                Arrays.fill(tmpArray, '_');
+                hangmanBuilder = new StringBuilder(new String(tmpArray));
+                Log.i("game", drawer.name + " chose the word '" + chosenWord + "'");
+                publishProgress(drawer.name + " chose a " + chosenWord.length() + "-letter word.");
 
                 while (numberGuessedWrong < numberOfChances) {
                     currentGuesserIndex = (currentGuesserIndex + 1) % players.size();
@@ -96,24 +96,54 @@ public class NewGameActivity extends ActionBarActivity {
                         continue;
 
                     Player guesser = players.get(currentGuesserIndex);
+                    pause(500);
+                    publishProgress(guesser.name + "'s turn to guess.");
+
                     char guess = guesser.chooseLetter(availableLetters);
                     String guessString = (new Character(guess)).toString();
 
                     availableLetters = availableLetters.replace(guessString, "");
-                    String updatedWord = word.replace(guessString, "");
-                    int count = word.length() - updatedWord.length();
-                    guesser.score += count * 100;
-                    word = updatedWord;
+                    String updatedWord = remainingWord.replace(guessString, "");
+                    int count = remainingWord.length() - updatedWord.length();
+                    int points = count * 100;
+                    guesser.score += points;
+                    remainingWord = updatedWord;
+
+                    int fromIndex = 0;
+                    int replaceIndex = chosenWord.indexOf(guess, fromIndex);
+                    while (replaceIndex != -1) {
+                        hangmanBuilder.setCharAt(replaceIndex, guess);
+                        fromIndex = replaceIndex + 1;
+                        replaceIndex = chosenWord.indexOf(guess, fromIndex);
+                    }
 
                     Log.i("game", guesser.name + " guessed the letter " + guessString);
                     Log.i("game", guesser.name + " scored " + (count * 100) + " points");
                     Log.i("game", "Available letters: " + availableLetters);
-                    Log.i("game", "Word: " + word);
+                    Log.i("game", "Word: " + remainingWord);
 
-                    if (count == 0)
+                    if (count == 0) {
                         numberGuessedWrong++;
+                        publishProgress(guesser.name + " incorrectly guessed the letter '" +
+                                guessString + "'.");
 
-                    publishProgress();
+                        if (numberGuessedWrong >= numberOfChances) {
+                            drawer.score += drawerBonus;
+                            publishProgress(drawer.name + " scored " + drawerBonus + " points " +
+                                    "for completing Hangman!");
+                            break;
+                        }
+                    } else {
+                        publishProgress(guesser.name + " correctly guessed the letter '" +
+                                guessString + "' and scored " + points + " points.");
+                    }
+
+                    if (remainingWord.length() == 0) {
+                        guesser.score += guesserBonus;
+                        publishProgress(guesser.name + " completed the word and scored " +
+                                guesserBonus + " points!");
+                        break;
+                    }
                 }
 
                 currentDrawerIndex = (currentDrawerIndex + 1) % players.size();
@@ -139,7 +169,7 @@ public class NewGameActivity extends ActionBarActivity {
         }
 
         @Override
-        protected void onProgressUpdate(Integer... progress) {
+        protected void onProgressUpdate(String... message) {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < players.size(); i++) {
                 if (i == currentDrawerIndex)
@@ -154,6 +184,11 @@ public class NewGameActivity extends ActionBarActivity {
             }
 
             tv_score.setText(sb.toString());
+
+            if (message.length != 0)
+                tv_status.append(message[0] + "\n");
+
+            tv_letters.setText(hangmanBuilder.toString());
         }
 
         @Override
@@ -176,24 +211,12 @@ public class NewGameActivity extends ActionBarActivity {
             Toast.makeText(getApplicationContext(), sb.toString(), Toast.LENGTH_LONG).show();
         }
 
-    }
-    /*
-    private void updateScore(ArrayList<Player> players, int currentDrawerIndex, int currentGuesserIndex) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < players.size(); i++) {
-            if (i == currentDrawerIndex)
-                sb.append("? ");
-            else if (i == currentGuesserIndex)
-                sb.append("> ");
-            else
-                sb.append("   ");
-
-            Player player = players.get(i);
-            sb.append(player.name + ": " + player.score + "\n");
+        private void pause(long ms) {
+            try {
+                Thread.sleep(ms);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
-        TextView tv = (TextView) findViewById(R.id.text_score);
-        tv.setText(sb);
     }
-    */
-
 }
