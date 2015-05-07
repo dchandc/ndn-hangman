@@ -18,7 +18,7 @@ When 2 players are found, then start new game
 
 public class LoadGame extends ActionBarActivity {
     private ArrayList<String>  playerList;
-    private Face loadFace;
+    private Face loadFace, discFace;
     private Name findPlayerInterest;
 
     private class FindPlayer implements OnData, OnTimeout {
@@ -32,6 +32,40 @@ public class LoadGame extends ActionBarActivity {
         }
     };
 
+    private class DiscPlayer implements OnInterestCallback, OnRegisterFailed {
+        public void onInterest(Name prefix, Interest interest, Face face, long id, InterestFilter filter) {
+
+        }
+
+        public boolean regFail = false;
+        public void onRegisterFailed(Name prefix) {
+            regFail = true;
+        }
+    }
+
+    private class DiscoveredNet extends Thread {
+//        discFace = new Face("localhost");
+
+        public DiscoveredNet() {};
+
+        @Override
+        public void run() {
+            try {
+                discFace = new Face("localhost");
+                discFace.setCommandSigningInfo(MainActivity.keychain, MainActivity.keychain.getDefaultCertificateName());
+                DiscPlayer discovery = new DiscPlayer();
+                discFace.registerPrefix(findPlayerInterest, discovery, discovery);
+
+                while(!discovery.regFail) {
+                    discFace.processEvents();
+
+                    Thread.sleep(5);
+                }
+            } catch (Exception e) {
+                
+            }
+        }
+    };
     private class FindPlayerNet extends Thread {
         public FindPlayerNet() {}
 
