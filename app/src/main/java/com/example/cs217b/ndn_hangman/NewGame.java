@@ -5,8 +5,6 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.Random;
 
-import com.example.cs217b.ndn_hangman.GameState.Stage;
-
 /**
  * Created by Dennis on 5/2/2015.
  */
@@ -14,7 +12,6 @@ public class NewGame {
     private ArrayList<Player> players;
     private static final int numberOfChances = 6;
     private int numberOfPlayers;
-    private Stage stage = Stage.INIT;
     private String allAvailableLetters = "abcdefghijklmnopqrstuvwxyz";
 
     public NewGame(int numberOfPlayers) throws IllegalArgumentException {
@@ -92,8 +89,6 @@ public class NewGame {
             Player player = players.get(i);
             Log.i("score", player.name + ": " + player.score);
         }
-
-        stage = Stage.COMPLETE;
 
         return null;
     }

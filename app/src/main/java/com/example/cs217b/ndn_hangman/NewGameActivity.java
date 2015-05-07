@@ -22,9 +22,11 @@ import java.util.Random;
  * Created by Dennis on 5/2/2015.
  */
 public class NewGameActivity extends ActionBarActivity {
-    TextView tv_score, tv_status, tv_letters;
-    ImageView img_man;
-    Button btn_guess;
+    private TextView tv_score, tv_status, tv_letters;
+    private ImageView img_man;
+    private Button btn_guess;
+    private int[] hangmanImages;
+    private final int numberOfChances = 6;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,15 +39,23 @@ public class NewGameActivity extends ActionBarActivity {
         img_man = (ImageView) findViewById(R.id.image_man);
         btn_guess = (Button) findViewById(R.id.button_guess);
 
+        hangmanImages = new int[numberOfChances + 1];
+        hangmanImages[0] = R.drawable.hangman_0;
+        hangmanImages[1] = R.drawable.hangman_1;
+        hangmanImages[2] = R.drawable.hangman_2;
+        hangmanImages[3] = R.drawable.hangman_3;
+        hangmanImages[4] = R.drawable.hangman_4;
+        hangmanImages[5] = R.drawable.hangman_5;
+        hangmanImages[6] = R.drawable.hangman_6;
+
         tv_status.setMovementMethod(new ScrollingMovementMethod());
 
         if (savedInstanceState == null)
-            new GameTask(2).execute();
+            new GameTask(4).execute();
     }
 
     public class GameTask extends AsyncTask<Void, String, ArrayList<Player>> {
         private ArrayList<Player> players;
-        private final int numberOfChances = 5;
         private final String allAvailableLetters = "abcdefghijklmnopqrstuvwxyz";
         private final int guesserBonus = 100;
         private final int drawerBonus = 100;
@@ -53,6 +63,7 @@ public class NewGameActivity extends ActionBarActivity {
         private int currentDrawerIndex;
         private int currentGuesserIndex;
         private StringBuilder hangmanBuilder;
+        private int numberGuessedWrong;
 
         public GameTask(int numberOfPlayers) {
             if (numberOfPlayers < 2 || numberOfPlayers > 4)
@@ -62,8 +73,6 @@ public class NewGameActivity extends ActionBarActivity {
             for (int i = 0; i < numberOfPlayers; i++) {
                 players.add(new AIPlayer("AIPlayer" + i));
             }
-
-            hangmanBuilder = new StringBuilder("");
 
             Random rand = new Random();
             firstDrawerIndex = rand.nextInt(players.size());
@@ -75,11 +84,12 @@ public class NewGameActivity extends ActionBarActivity {
         protected ArrayList<Player> doInBackground(Void... ignored) {
             do {
                 // Begin new round
+                pause(1000);
                 String availableLetters = allAvailableLetters;
-                int numberGuessedWrong = 0;
+                numberGuessedWrong = 0;
+                hangmanBuilder = new StringBuilder("");
 
                 Player drawer = players.get(currentDrawerIndex);
-                pause(1000);
                 publishProgress(drawer.name + "'s turn to choose a word.");
 
                 String chosenWord = drawer.chooseWord();
@@ -129,6 +139,7 @@ public class NewGameActivity extends ActionBarActivity {
 
                         if (numberGuessedWrong >= numberOfChances) {
                             drawer.score += drawerBonus;
+                            Log.i("game", "Drawer (+" + drawerBonus + "): " + drawer.score);
                             publishProgress(drawer.name + " scored " + drawerBonus + " points " +
                                     "for completing Hangman!");
                             break;
@@ -145,6 +156,8 @@ public class NewGameActivity extends ActionBarActivity {
                         break;
                     }
                 }
+
+                pause(1000);
 
                 currentDrawerIndex = (currentDrawerIndex + 1) % players.size();
 
@@ -172,15 +185,15 @@ public class NewGameActivity extends ActionBarActivity {
         protected void onProgressUpdate(String... message) {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < players.size(); i++) {
-                if (i == currentDrawerIndex)
-                    sb.append("? ");
-                else if (i == currentGuesserIndex)
-                    sb.append("> ");
-                else
-                    sb.append("   ");
-
                 Player player = players.get(i);
-                sb.append(player.name + ": " + player.score + "\n");
+                sb.append(player.name + ": " + player.score);
+
+                if (i == currentDrawerIndex)
+                    sb.append(" (?)\n");
+                else if (i == currentGuesserIndex)
+                    sb.append(" (!)\n");
+                else
+                    sb.append("\n");
             }
 
             tv_score.setText(sb.toString());
@@ -189,12 +202,27 @@ public class NewGameActivity extends ActionBarActivity {
                 tv_status.append(message[0] + "\n");
 
             tv_letters.setText(hangmanBuilder.toString());
+
+            img_man.setImageResource(hangmanImages[numberGuessedWrong]);
         }
 
         @Override
         protected void onPostExecute(ArrayList<Player> winners) {
             Log.i("game", "GameTask complete");
-            StringBuilder sb = new StringBuilder("");
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < players.size(); i++) {
+                Player player = players.get(i);
+                sb.append(player.name + ": " + player.score + "\n");
+            }
+
+            tv_score.setText(sb.toString());
+
+            tv_letters.setText("");
+
+            img_man.setImageResource(hangmanImages[numberOfChances]);
+
+            sb = new StringBuilder("");
             for (int i = 0; i < winners.size(); i++) {
                 if (i > 0)
                     sb.append(", ");
@@ -204,11 +232,11 @@ public class NewGameActivity extends ActionBarActivity {
             }
 
             if (winners.size() > 1)
-                sb.append(" win!");
+                sb.append(" tie!");
             else
                 sb.append(" wins!");
 
-            Toast.makeText(getApplicationContext(), sb.toString(), Toast.LENGTH_LONG).show();
+            tv_status.append(sb.toString());
         }
 
         private void pause(long ms) {

@@ -7,23 +7,19 @@ import java.util.ArrayList;
  */
 public class GameState {
     public ArrayList<Player> players;
-    public int numberGuessedWrong;
     public int currentDrawerIndex;
     public int currentGuesserIndex;
-    public String availableLetters;
-    public String word;
-    public enum Stage {INIT, RUNNING, COMPLETE};
-    public Stage state;
+    public int numberGuessedWrong;
+    public String hangmanWord;
+    public String statusUpdate;
 
-    public GameState(ArrayList<Player> players, int numberGuessedWrong, int currentDrawerIndex,
-                     int currentGuesserIndex, String availableLetters, String word) {
+    public GameState(ArrayList<Player> players, int currentDrawerIndex, int currentGuesserIndex,
+                     int numberGuessedWrong, String hangmanWord, String statusUpdate) {
         this.players = players;
-        this.numberGuessedWrong = numberGuessedWrong;
         this.currentDrawerIndex = currentDrawerIndex;
         this.currentGuesserIndex = currentGuesserIndex;
-        this.availableLetters = availableLetters;
-        this.word = word;
-
-        state = Stage.INIT;
+        this.numberGuessedWrong = numberGuessedWrong;
+        this.hangmanWord = hangmanWord;
+        this.statusUpdate = statusUpdate;
     }
 }
