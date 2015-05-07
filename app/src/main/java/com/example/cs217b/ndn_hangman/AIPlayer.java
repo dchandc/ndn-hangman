@@ -7,9 +7,12 @@ import android.os.Handler;
  * Created by Dennis on 5/2/2015.
  */
 public class AIPlayer extends Player {
+    private String[] words;
 
     public AIPlayer(String name) {
         this.name = name;
+
+        words = new String[]{"alphabet", "dictionary", "alliteration", "consonant"};
     }
 
     @Override
@@ -20,7 +23,8 @@ public class AIPlayer extends Player {
             e.printStackTrace();
         }
 
-        return "abcdefghij";
+        Random rand = new Random();
+        return words[rand.nextInt(words.length)];
     }
 
     @Override
