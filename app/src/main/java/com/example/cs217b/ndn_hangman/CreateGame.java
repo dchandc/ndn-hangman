@@ -20,7 +20,7 @@ public class CreateGame extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_game);
 
-        createGameFace = new Face("localhost");
+        createGameFace = new Face("spurs.cs.ucla.edu");
         try {
             createGameFace.setCommandSigningInfo(MainActivity.keychain, MainActivity.keychain.getDefaultCertificateName());
         }
@@ -28,7 +28,7 @@ public class CreateGame extends ActionBarActivity {
             Log.d("SecurityException", e.getLocalizedMessage());
         }
         try {
-            createGameFace.registerPrefix(new Name("/localhost/hangman/lobby/available/room1"),
+            createGameFace.registerPrefix(new Name("/ndn/hangman/public/lobby/room1"),
                     new OnInterest() {
                         @Override
                         public void onInterest(Name prefix, Interest interest, Transport transport, long interestFilterId) {

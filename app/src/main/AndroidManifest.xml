@@ -24,6 +24,10 @@
             android:name=".CreateGame"
             android:label="@string/title_activity_create_game" >
         </activity>
+        <activity
+            android:name=".LoadGame"
+            android:label="@string/title_activity_load_game" >
+        </activity>
     </application>
 
 </manifest>

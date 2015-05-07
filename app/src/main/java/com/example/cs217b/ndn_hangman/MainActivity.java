@@ -25,8 +25,10 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 Log.i("clicks", "New Game button clicked");
-                Intent intent = new Intent(MainActivity.this, NewGameActivity.class);
+                Intent intent = new Intent(MainActivity.this, LoadGame.class);
                 startActivity(intent);
+//                Intent intent = new Intent(MainActivity.this, NewGameActivity.class);
+//                startActivity(intent);
             }
         });
 
