@@ -1,14 +1,20 @@
 package com.example.cs217b.ndn_hangman;
 
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
+import android.text.InputType;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,11 +33,17 @@ public class NewGameActivity extends ActionBarActivity {
     private Button btn_guess;
     private int[] hangmanImages;
     private final int numberOfChances = 6;
+    private GameTask gameTask;
+    private Object lock;
+    private enum UserInputType {NONE, WORD, LETTER};
+    private Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_newgame);
+
+        context = this;
 
         tv_score = (TextView) findViewById(R.id.text_score);
         tv_status = (TextView) findViewById(R.id.text_status);
@@ -50,8 +62,17 @@ public class NewGameActivity extends ActionBarActivity {
 
         tv_status.setMovementMethod(new ScrollingMovementMethod());
 
-        if (savedInstanceState == null)
-            new GameTask(4).execute();
+        if (savedInstanceState == null) {
+            lock = new Object();
+            gameTask = new GameTask(4, lock);
+            gameTask.execute();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        gameTask.cancel(true);
     }
 
     public class GameTask extends AsyncTask<Void, String, ArrayList<Player>> {
@@ -64,13 +85,18 @@ public class NewGameActivity extends ActionBarActivity {
         private int currentGuesserIndex;
         private StringBuilder hangmanBuilder;
         private int numberGuessedWrong;
+        private Object lock;
+        private UserInputType waitForInput;
 
-        public GameTask(int numberOfPlayers) {
+        public GameTask(int numberOfPlayers, Object lock) {
             if (numberOfPlayers < 2 || numberOfPlayers > 4)
                 throw new IllegalArgumentException("Number of players must be between 2 and 4");
 
+            this.lock = lock;
+
             players = new ArrayList<Player>();
-            for (int i = 0; i < numberOfPlayers; i++) {
+            players.add(new LocalPlayer("LocalPlayer"));
+            for (int i = 0; i < numberOfPlayers - 1; i++) {
                 players.add(new AIPlayer("AIPlayer" + i));
             }
 
@@ -204,6 +230,110 @@ public class NewGameActivity extends ActionBarActivity {
             tv_letters.setText(hangmanBuilder.toString());
 
             img_man.setImageResource(hangmanImages[numberGuessedWrong]);
+
+            if (waitForInput == UserInputType.WORD) {
+                btn_guess.setEnabled(true);
+                btn_guess.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                        builder.setTitle("Hangman Input");
+                        builder.setMessage("Choose a 4- to 12-letter long word");
+                        final EditText eText = new EditText(context);
+                        eText.setInputType(InputType.TYPE_CLASS_TEXT);
+                        eText.setTextColor(Color.rgb(0, 0, 0));
+                        builder.setView(eText);
+                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                boolean valid = true;
+                                String str = eText.getText().toString().toLowerCase();
+                                if (str.length() < 4 || str.length() > 12) {
+                                    valid = false;
+                                } else {
+                                    for (int i = 0; i < str.length(); i++) {
+                                        char c = str.charAt(i);
+                                        if (c < 'a' || c > 'z') {
+                                            valid = false;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (valid) {
+                                    ((LocalPlayer) players.get(currentDrawerIndex)).inputWord = str;
+                                    btn_guess.setEnabled(false);
+                                    waitForInput = UserInputType.NONE;
+                                    synchronized (lock) {
+                                        lock.notify();
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Invalid input",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+
+                        builder.show();
+                    }
+                });
+            } else if (waitForInput == UserInputType.LETTER) {
+                btn_guess.setEnabled(true);
+                btn_guess.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                        builder.setTitle("Hangman Input");
+                        builder.setMessage("Choose a letter (a-z)");
+                        final EditText eText = new EditText(context);
+                        eText.setInputType(InputType.TYPE_CLASS_TEXT);
+                        eText.setTextColor(Color.rgb(0, 0, 0));
+                        builder.setView(eText);
+                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                boolean valid = true;
+                                String str = eText.getText().toString().toLowerCase();
+                                if (str.length() != 1) {
+                                    valid = false;
+                                } else {
+                                    char c = str.charAt(0);
+                                    if (c < 'a' || c > 'z') {
+                                        valid = false;
+                                    }
+                                }
+
+                                if (valid) {
+                                    ((LocalPlayer) players.get(currentGuesserIndex)).inputLetter =
+                                            str.charAt(0);
+                                    btn_guess.setEnabled(false);
+                                    waitForInput = UserInputType.NONE;
+                                    synchronized (lock) {
+                                        lock.notify();
+                                    }
+                                } else {
+                                    Toast.makeText(context, "Invalid input",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+
+                        builder.show();
+                    }
+                });
+            }
         }
 
         @Override
@@ -244,6 +374,45 @@ public class NewGameActivity extends ActionBarActivity {
                 Thread.sleep(ms);
             } catch (InterruptedException e) {
                 e.printStackTrace();
+            }
+        }
+
+        private class LocalPlayer extends Player {
+            String inputWord;
+            char inputLetter;
+
+            public LocalPlayer(String name) {
+                this.name = name;
+            }
+
+            @Override
+            String chooseWord() {
+                waitForInput = UserInputType.WORD;
+                publishProgress();
+                try {
+                    synchronized (lock) {
+                        lock.wait();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                return inputWord;
+            }
+
+            @Override
+            char chooseLetter(String letters) {
+                waitForInput = UserInputType.LETTER;
+                publishProgress();
+                try {
+                    synchronized (lock) {
+                        lock.wait();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                return inputLetter;
             }
         }
     }

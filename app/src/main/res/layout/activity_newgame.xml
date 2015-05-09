@@ -89,7 +89,8 @@
                     android:text="@+string/button_guess"
                     android:id="@+id/button_guess"
                     android:layout_centerVertical="true"
-                    android:layout_centerHorizontal="true" />
+                    android:layout_centerHorizontal="true"
+                    android:enabled="false" />
 
             </RelativeLayout>
 
