@@ -28,7 +28,7 @@ import java.util.Random;
  * Created by Dennis on 5/2/2015.
  */
 public class NewGameActivity extends ActionBarActivity {
-    private TextView tv_score, tv_status, tv_letters;
+    private TextView tv_score, tv_status, tv_letters, tv_remain;
     private ImageView img_man;
     private Button btn_guess;
     private int[] hangmanImages;
@@ -48,6 +48,7 @@ public class NewGameActivity extends ActionBarActivity {
         tv_score = (TextView) findViewById(R.id.text_score);
         tv_status = (TextView) findViewById(R.id.text_status);
         tv_letters = (TextView) findViewById(R.id.text_letters);
+        tv_remain = (TextView) findViewById(R.id.text_remain);
         img_man = (ImageView) findViewById(R.id.image_man);
         btn_guess = (Button) findViewById(R.id.button_guess);
 
@@ -78,6 +79,8 @@ public class NewGameActivity extends ActionBarActivity {
     public class GameTask extends AsyncTask<Void, String, ArrayList<Player>> {
         private ArrayList<Player> players;
         private final String allAvailableLetters = "abcdefghijklmnopqrstuvwxyz";
+        private final String allLettersSpaces =
+                "a b c d e f g h i j k l m n o p q r s t u v w x y z ";
         private final int guesserBonus = 100;
         private final int drawerBonus = 100;
         private int firstDrawerIndex;
@@ -87,6 +90,7 @@ public class NewGameActivity extends ActionBarActivity {
         private int numberGuessedWrong;
         private Object lock;
         private UserInputType waitForInput;
+        private String remainingString;
 
         public GameTask(int numberOfPlayers, Object lock) {
             if (numberOfPlayers < 2 || numberOfPlayers > 4)
@@ -114,6 +118,7 @@ public class NewGameActivity extends ActionBarActivity {
                 String availableLetters = allAvailableLetters;
                 numberGuessedWrong = 0;
                 hangmanBuilder = new StringBuilder("");
+                remainingString = "";
 
                 Player drawer = players.get(currentDrawerIndex);
                 publishProgress(drawer.name + "'s turn to choose a word.");
@@ -123,6 +128,7 @@ public class NewGameActivity extends ActionBarActivity {
                 char[] tmpArray = new char[chosenWord.length()];
                 Arrays.fill(tmpArray, '_');
                 hangmanBuilder = new StringBuilder(new String(tmpArray));
+                remainingString = allLettersSpaces;
                 Log.i("game", drawer.name + " chose the word '" + chosenWord + "'");
                 publishProgress(drawer.name + " chose a " + chosenWord.length() + "-letter word.");
 
@@ -139,6 +145,7 @@ public class NewGameActivity extends ActionBarActivity {
                     String guessString = (new Character(guess)).toString();
 
                     availableLetters = availableLetters.replace(guessString, "");
+                    remainingString = remainingString.replace(guessString + " ", "");
                     String updatedWord = remainingWord.replace(guessString, "");
                     int count = remainingWord.length() - updatedWord.length();
                     int points = count * 100;
@@ -212,14 +219,7 @@ public class NewGameActivity extends ActionBarActivity {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < players.size(); i++) {
                 Player player = players.get(i);
-                sb.append(player.name + ": " + player.score);
-
-                if (i == currentDrawerIndex)
-                    sb.append(" (?)\n");
-                else if (i == currentGuesserIndex)
-                    sb.append(" (!)\n");
-                else
-                    sb.append("\n");
+                sb.append(player.name + ": " + player.score + "\n");
             }
 
             tv_score.setText(sb.toString());
@@ -230,6 +230,8 @@ public class NewGameActivity extends ActionBarActivity {
             tv_letters.setText(hangmanBuilder.toString());
 
             img_man.setImageResource(hangmanImages[numberGuessedWrong]);
+
+            tv_remain.setText(remainingString);
 
             if (waitForInput == UserInputType.WORD) {
                 btn_guess.setEnabled(true);

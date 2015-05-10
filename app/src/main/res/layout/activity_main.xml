@@ -41,4 +41,13 @@
         android:layout_above="@+id/button_new"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="47dp" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Load Game"
+        android:id="@+id/button_load"
+        android:layout_below="@+id/button_join"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="50dp" />
 </RelativeLayout>

@@ -25,10 +25,28 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 Log.i("clicks", "New Game button clicked");
+                Intent intent = new Intent(MainActivity.this, NewGameActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        Button button_create = (Button) findViewById(R.id.button_create);
+        button_create.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("clicks", "Create Game button clicked");
+                Intent intent = new Intent(MainActivity.this, CreateGame.class);
+                startActivity(intent);
+            }
+        });
+
+        Button button_load = (Button) findViewById(R.id.button_load);
+        button_load.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("clicks", "Load Game button clicked");
                 Intent intent = new Intent(MainActivity.this, LoadGame.class);
                 startActivity(intent);
-//                Intent intent = new Intent(MainActivity.this, NewGameActivity.class);
-//                startActivity(intent);
             }
         });
 
