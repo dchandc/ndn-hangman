@@ -11,9 +11,11 @@ import net.named_data.jndn.security.SecurityException;
 import net.named_data.jndn.transport.Transport;
 
 import java.io.IOException;
+import net.named_data.jndn.sync.*;
 
 public class CreateGame extends ActionBarActivity {
     private Face createGameFace;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,6 +23,8 @@ public class CreateGame extends ActionBarActivity {
         setContentView(R.layout.activity_create_game);
 
         createGameFace = new Face("spurs.cs.ucla.edu");
+
+
         try {
             createGameFace.setCommandSigningInfo(MainActivity.keychain, MainActivity.keychain.getDefaultCertificateName());
         }

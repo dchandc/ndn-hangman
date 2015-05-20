@@ -62,7 +62,7 @@ public class LoadGame extends ActionBarActivity {
                     Thread.sleep(5);
                 }
             } catch (Exception e) {
-                
+
             }
         }
     };
