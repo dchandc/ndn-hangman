@@ -5,83 +5,161 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 
 import net.named_data.jndn.*;
+import net.named_data.jndn.security.KeyChain;
+import net.named_data.jndn.security.identity.IdentityManager;
+import net.named_data.jndn.security.identity.MemoryIdentityStorage;
+import net.named_data.jndn.security.identity.MemoryPrivateKeyStorage;
+import net.named_data.jndn.util.Blob;
 
-import java.util.ArrayList;
-
-/*
-Send interest to find players
-Create a player list
-When 2 players are found, then start new game
- */
+import java.io.IOException;
 
 public class LoadGame extends ActionBarActivity {
-    private ArrayList<String>  playerList;
     private Face loadFace, discFace;
-    private Name findPlayerInterest;
 
     private class FindPlayer implements OnData, OnTimeout {
-        public void onData(Interest interest, Data data) {
-
-        }
-
-        public boolean timeOut = false;
+        public boolean done = false;
         public void onTimeout(Interest interest) {
-            timeOut = true;
-        }
-    };
-
-    private class DiscPlayer implements OnInterestCallback, OnRegisterFailed {
-        public void onInterest(Name prefix, Interest interest, Face face, long id, InterestFilter filter) {
-
+            Log.i("NDN", "Interest timeout");
+            done = true;
         }
 
-        public boolean regFail = false;
-        public void onRegisterFailed(Name prefix) {
-            regFail = true;
+
+        public void onData(Interest interest, Data data) {
+            Log.i("NDN", "Got data packet with name " + data.getName().toUri() +
+                    " and content " + data.getContent().toString());
+            done = true;
         }
     }
 
-    private class DiscoveredNet extends Thread {
-//        discFace = new Face("localhost");
+    private class DiscPlayer implements OnInterestCallback, OnRegisterFailed {
+        public boolean done = false;
+        public void onRegisterFailed(Name prefix) {
+            Log.i("NDN", "Register failed for " + prefix.toUri());
+            done = true;
+        }
 
-        public DiscoveredNet() {};
+        public void onInterest(Name prefix, Interest interest, Face face, long id, InterestFilter filter) {
+            Log.i("NDN", "Received interest " + interest.getName().toUri());
+            Data data = new Data();
+            data.setName(new Name(interest.getName()));
+            Blob blob = new Blob("Hello".getBytes());
+            data.setContent(blob);
+            try {
+                face.putData(data);
+            } catch (IOException e) {
+                Log.i("NDN", "putData exception");
+            }
+            done = true;
+        }
+    }
+
+    /**
+     * Setup an in-memory KeyChain with a default identity.
+     *
+     * @return
+     * @throws net.named_data.jndn.security.SecurityException
+     */
+    public static KeyChain buildTestKeyChain() throws net.named_data.jndn.security.SecurityException {
+        MemoryIdentityStorage identityStorage = new MemoryIdentityStorage();
+        MemoryPrivateKeyStorage privateKeyStorage = new MemoryPrivateKeyStorage();
+        IdentityManager identityManager = new IdentityManager(identityStorage, privateKeyStorage);
+        KeyChain keyChain = new KeyChain(identityManager);
+        try {
+            keyChain.getDefaultCertificateName();
+        } catch (net.named_data.jndn.security.SecurityException e) {
+            keyChain.createIdentity(new Name("/test/identity"));
+            keyChain.getIdentityManager().setDefaultIdentity(new Name("/test/identity"));
+        }
+        return keyChain;
+    }
+
+    private class DiscoveredNet extends Thread {
+        boolean interestComplete = false;
 
         @Override
         public void run() {
             try {
+                //discFace = new Face("spurs.cs.ucla.edu");
                 discFace = new Face("localhost");
-                discFace.setCommandSigningInfo(MainActivity.keychain, MainActivity.keychain.getDefaultCertificateName());
-                DiscPlayer discovery = new DiscPlayer();
-                discFace.registerPrefix(findPlayerInterest, discovery, discovery);
+                KeyChain keychain = buildTestKeyChain();
+                discFace.setCommandSigningInfo(keychain, keychain.getDefaultCertificateName());
 
-                while(!discovery.regFail) {
+                Interest interest = new Interest(new Name("/ndn/org/caida/ping/" +
+                        Math.floor(Math.random() * 100000)));
+                interest.setInterestLifetimeMilliseconds(1000);
+                discFace.expressInterest(interest, new OnData() {
+                    public void onData(Interest interest, Data data) {
+                        Log.i("NDN", "Data " + data.getName().toUri() +
+                                " received for interest " + interest.getName().toUri());
+                        interestComplete = true;
+                    }
+                }, new OnTimeout() {
+                    public void onTimeout(Interest interest) {
+                        Log.i("NDN", "Timeout");
+                        interestComplete = true;
+                    }
+                });
+
+                while (interestComplete == false) {
                     discFace.processEvents();
+                    Thread.sleep(5);
+                }
 
+                DiscPlayer discovery = new DiscPlayer();
+                Name prefix = new Name("/ndn/edu/ucla/hangman");
+                discFace.registerPrefix(prefix, discovery, discovery);
+                discFace.setInterestFilter(prefix, discovery);
+                while(discovery.done == false) {
+                    discFace.processEvents();
                     Thread.sleep(5);
                 }
             } catch (Exception e) {
-
+                e.printStackTrace();
+                Log.i("NDN", "Producer exception");
             }
         }
-    };
+    }
     private class FindPlayerNet extends Thread {
         public FindPlayerNet() {}
 
         @Override
         public void run() {
             try {
-//                loadFace = new Face("spurs.cs.ucla.edu");
+                //loadFace = new Face("spurs.cs.ucla.edu");
                 loadFace = new Face("localhost");
-                findPlayerInterest = new Name("/ndn-hangman/find/player/");
                 FindPlayer findPlayer = new FindPlayer();
+                Interest findPlayerInterest = new Interest(new Name("/ndn/edu/ucla/hangman"));
+                findPlayerInterest.setInterestLifetimeMilliseconds(1000);
                 loadFace.expressInterest(findPlayerInterest,findPlayer,findPlayer);
 
-                while (findPlayer.timeOut = false) {
-
+                while (findPlayer.done == false) {
                     loadFace.processEvents();
+                    Thread.sleep(5);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.i("NDN", "exception: " + e.getMessage());
+            }
+        }
+    };
 
+    private class PingNet extends Thread {
+        @Override
+        public void run() {
+            try {
+                loadFace = new Face("spurs.cs.ucla.edu");
+                FindPlayer findPlayer = new FindPlayer();
+                Interest findPlayerInterest = new Interest(new Name("/ndn/org/caida/ping/" +
+                        Math.floor(Math.random() * 100000)));
+                findPlayerInterest.setInterestLifetimeMilliseconds(1000);
+                loadFace.expressInterest(findPlayerInterest,findPlayer,findPlayer);
+
+                while (findPlayer.done == false) {
+                    loadFace.processEvents();
                     Thread.sleep(5);
                 }
             } catch (Exception e) {
@@ -95,8 +173,35 @@ public class LoadGame extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_load_game);
 
-        FindPlayerNet playerNet = new FindPlayerNet();
-        playerNet.start();
+        Button btn = (Button) findViewById(R.id.button_interest);
+        btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FindPlayerNet playerNet = new FindPlayerNet();
+                playerNet.start();
+                Log.i("NDN", "Thread started");
+            }
+        });
+
+        Button btn2 = (Button) findViewById(R.id.button_data);
+        btn2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DiscoveredNet discNet = new DiscoveredNet();
+                discNet.start();
+                Log.i("NDN", "Thread started");
+            }
+        });
+
+        Button btn3 = (Button) findViewById(R.id.button_ping);
+        btn3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PingNet pingNet = new PingNet();
+                pingNet.start();
+                Log.i("NDN", "Thread started");
+            }
+        });
     }
 
     @Override

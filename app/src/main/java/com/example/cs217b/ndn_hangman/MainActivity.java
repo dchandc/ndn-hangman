@@ -9,12 +9,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
-import net.named_data.jndn.*;
-import net.named_data.jndn.security.KeyChain;
-
-
 public class MainActivity extends ActionBarActivity {
-    public static KeyChain keychain;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,15 +44,7 @@ public class MainActivity extends ActionBarActivity {
                 startActivity(intent);
             }
         });
-
-        try {
-            MainActivity.keychain = new KeyChain();
-        }
-        catch (Exception exception) {
-            Log.d("Exception", "KeyChain exception in Main Activity");
-        }
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
