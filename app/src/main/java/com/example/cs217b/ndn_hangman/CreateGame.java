@@ -21,12 +21,14 @@ public class CreateGame extends ActionBarActivity {
         setContentView(R.layout.activity_create_game);
 
         createGameFace = new Face("spurs.cs.ucla.edu");
+        /*
         try {
             createGameFace.setCommandSigningInfo(MainActivity.keychain, MainActivity.keychain.getDefaultCertificateName());
         }
         catch (SecurityException e) {
             Log.d("SecurityException", e.getLocalizedMessage());
         }
+        */
         try {
             createGameFace.registerPrefix(new Name("/ndn/hangman/public/lobby/room1"),
                     new OnInterest() {
