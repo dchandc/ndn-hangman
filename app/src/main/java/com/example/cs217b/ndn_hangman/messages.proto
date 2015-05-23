@@ -12,7 +12,7 @@ message Messages {
         HELLO = 4;
         OTHER = 5;
     }
-    required MessageType type = 3 [default = GUESS];
-    optional string letter = 4;
-    optional string positions = 5;
+    required MessageType type = 2 [default = GUESS];
+    optional string word = 3;
+    required int32 timestamp = 4;
 }

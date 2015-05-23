@@ -27,41 +27,36 @@ public final class MessageBuffer {
         getNameBytes();
 
     /**
-     * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 3 [default = GUESS];</code>
+     * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 2 [default = GUESS];</code>
      */
     boolean hasType();
     /**
-     * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 3 [default = GUESS];</code>
+     * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 2 [default = GUESS];</code>
      */
     com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType getType();
 
     /**
-     * <code>optional string letter = 4;</code>
+     * <code>optional string word = 3;</code>
      */
-    boolean hasLetter();
+    boolean hasWord();
     /**
-     * <code>optional string letter = 4;</code>
+     * <code>optional string word = 3;</code>
      */
-    java.lang.String getLetter();
+    java.lang.String getWord();
     /**
-     * <code>optional string letter = 4;</code>
+     * <code>optional string word = 3;</code>
      */
     com.google.protobuf.ByteString
-        getLetterBytes();
+        getWordBytes();
 
     /**
-     * <code>optional string positions = 5;</code>
+     * <code>required int32 timestamp = 4;</code>
      */
-    boolean hasPositions();
+    boolean hasTimestamp();
     /**
-     * <code>optional string positions = 5;</code>
+     * <code>required int32 timestamp = 4;</code>
      */
-    java.lang.String getPositions();
-    /**
-     * <code>optional string positions = 5;</code>
-     */
-    com.google.protobuf.ByteString
-        getPositionsBytes();
+    int getTimestamp();
   }
   /**
    * Protobuf type {@code com.example.cs217b.ndn_hangman.Messages}
@@ -121,27 +116,26 @@ public final class MessageBuffer {
               name_ = bs;
               break;
             }
-            case 24: {
+            case 16: {
               int rawValue = input.readEnum();
               com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType value = com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType.valueOf(rawValue);
               if (value == null) {
-                unknownFields.mergeVarintField(3, rawValue);
+                unknownFields.mergeVarintField(2, rawValue);
               } else {
                 bitField0_ |= 0x00000002;
                 type_ = value;
               }
               break;
             }
-            case 34: {
+            case 26: {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
-              letter_ = bs;
+              word_ = bs;
               break;
             }
-            case 42: {
-              com.google.protobuf.ByteString bs = input.readBytes();
+            case 32: {
               bitField0_ |= 0x00000008;
-              positions_ = bs;
+              timestamp_ = input.readInt32();
               break;
             }
           }
@@ -205,9 +199,13 @@ public final class MessageBuffer {
        */
       LEAVE(3, 3),
       /**
-       * <code>OTHER = 4;</code>
+       * <code>HELLO = 4;</code>
        */
-      OTHER(4, 4),
+      HELLO(4, 4),
+      /**
+       * <code>OTHER = 5;</code>
+       */
+      OTHER(5, 5),
       ;
 
       /**
@@ -227,9 +225,13 @@ public final class MessageBuffer {
        */
       public static final int LEAVE_VALUE = 3;
       /**
-       * <code>OTHER = 4;</code>
+       * <code>HELLO = 4;</code>
        */
-      public static final int OTHER_VALUE = 4;
+      public static final int HELLO_VALUE = 4;
+      /**
+       * <code>OTHER = 5;</code>
+       */
+      public static final int OTHER_VALUE = 5;
 
 
       public final int getNumber() { return value; }
@@ -240,7 +242,8 @@ public final class MessageBuffer {
           case 1: return EVAL;
           case 2: return JOIN;
           case 3: return LEAVE;
-          case 4: return OTHER;
+          case 4: return HELLO;
+          case 5: return OTHER;
           default: return null;
         }
       }
@@ -335,34 +338,34 @@ public final class MessageBuffer {
       }
     }
 
-    public static final int TYPE_FIELD_NUMBER = 3;
+    public static final int TYPE_FIELD_NUMBER = 2;
     private com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType type_;
     /**
-     * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 3 [default = GUESS];</code>
+     * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 2 [default = GUESS];</code>
      */
     public boolean hasType() {
       return ((bitField0_ & 0x00000002) == 0x00000002);
     }
     /**
-     * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 3 [default = GUESS];</code>
+     * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 2 [default = GUESS];</code>
      */
     public com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType getType() {
       return type_;
     }
 
-    public static final int LETTER_FIELD_NUMBER = 4;
-    private java.lang.Object letter_;
+    public static final int WORD_FIELD_NUMBER = 3;
+    private java.lang.Object word_;
     /**
-     * <code>optional string letter = 4;</code>
+     * <code>optional string word = 3;</code>
      */
-    public boolean hasLetter() {
+    public boolean hasWord() {
       return ((bitField0_ & 0x00000004) == 0x00000004);
     }
     /**
-     * <code>optional string letter = 4;</code>
+     * <code>optional string word = 3;</code>
      */
-    public java.lang.String getLetter() {
-      java.lang.Object ref = letter_;
+    public java.lang.String getWord() {
+      java.lang.Object ref = word_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
@@ -370,75 +373,48 @@ public final class MessageBuffer {
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
         if (bs.isValidUtf8()) {
-          letter_ = s;
+          word_ = s;
         }
         return s;
       }
     }
     /**
-     * <code>optional string letter = 4;</code>
+     * <code>optional string word = 3;</code>
      */
     public com.google.protobuf.ByteString
-        getLetterBytes() {
-      java.lang.Object ref = letter_;
+        getWordBytes() {
+      java.lang.Object ref = word_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        letter_ = b;
+        word_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
       }
     }
 
-    public static final int POSITIONS_FIELD_NUMBER = 5;
-    private java.lang.Object positions_;
+    public static final int TIMESTAMP_FIELD_NUMBER = 4;
+    private int timestamp_;
     /**
-     * <code>optional string positions = 5;</code>
+     * <code>required int32 timestamp = 4;</code>
      */
-    public boolean hasPositions() {
+    public boolean hasTimestamp() {
       return ((bitField0_ & 0x00000008) == 0x00000008);
     }
     /**
-     * <code>optional string positions = 5;</code>
+     * <code>required int32 timestamp = 4;</code>
      */
-    public java.lang.String getPositions() {
-      java.lang.Object ref = positions_;
-      if (ref instanceof java.lang.String) {
-        return (java.lang.String) ref;
-      } else {
-        com.google.protobuf.ByteString bs = 
-            (com.google.protobuf.ByteString) ref;
-        java.lang.String s = bs.toStringUtf8();
-        if (bs.isValidUtf8()) {
-          positions_ = s;
-        }
-        return s;
-      }
-    }
-    /**
-     * <code>optional string positions = 5;</code>
-     */
-    public com.google.protobuf.ByteString
-        getPositionsBytes() {
-      java.lang.Object ref = positions_;
-      if (ref instanceof java.lang.String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (java.lang.String) ref);
-        positions_ = b;
-        return b;
-      } else {
-        return (com.google.protobuf.ByteString) ref;
-      }
+    public int getTimestamp() {
+      return timestamp_;
     }
 
     private void initFields() {
       name_ = "";
       type_ = com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType.GUESS;
-      letter_ = "";
-      positions_ = "";
+      word_ = "";
+      timestamp_ = 0;
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -454,6 +430,10 @@ public final class MessageBuffer {
         memoizedIsInitialized = 0;
         return false;
       }
+      if (!hasTimestamp()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
       memoizedIsInitialized = 1;
       return true;
     }
@@ -465,13 +445,13 @@ public final class MessageBuffer {
         output.writeBytes(1, getNameBytes());
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
-        output.writeEnum(3, type_.getNumber());
+        output.writeEnum(2, type_.getNumber());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
-        output.writeBytes(4, getLetterBytes());
+        output.writeBytes(3, getWordBytes());
       }
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
-        output.writeBytes(5, getPositionsBytes());
+        output.writeInt32(4, timestamp_);
       }
       getUnknownFields().writeTo(output);
     }
@@ -488,15 +468,15 @@ public final class MessageBuffer {
       }
       if (((bitField0_ & 0x00000002) == 0x00000002)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeEnumSize(3, type_.getNumber());
+          .computeEnumSize(2, type_.getNumber());
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(4, getLetterBytes());
+          .computeBytesSize(3, getWordBytes());
       }
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
-          .computeBytesSize(5, getPositionsBytes());
+          .computeInt32Size(4, timestamp_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -619,9 +599,9 @@ public final class MessageBuffer {
         bitField0_ = (bitField0_ & ~0x00000001);
         type_ = com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType.GUESS;
         bitField0_ = (bitField0_ & ~0x00000002);
-        letter_ = "";
+        word_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
-        positions_ = "";
+        timestamp_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
@@ -662,11 +642,11 @@ public final class MessageBuffer {
         if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
           to_bitField0_ |= 0x00000004;
         }
-        result.letter_ = letter_;
+        result.word_ = word_;
         if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
           to_bitField0_ |= 0x00000008;
         }
-        result.positions_ = positions_;
+        result.timestamp_ = timestamp_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -691,15 +671,13 @@ public final class MessageBuffer {
         if (other.hasType()) {
           setType(other.getType());
         }
-        if (other.hasLetter()) {
+        if (other.hasWord()) {
           bitField0_ |= 0x00000004;
-          letter_ = other.letter_;
+          word_ = other.word_;
           onChanged();
         }
-        if (other.hasPositions()) {
-          bitField0_ |= 0x00000008;
-          positions_ = other.positions_;
-          onChanged();
+        if (other.hasTimestamp()) {
+          setTimestamp(other.getTimestamp());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -711,6 +689,10 @@ public final class MessageBuffer {
           return false;
         }
         if (!hasType()) {
+          
+          return false;
+        }
+        if (!hasTimestamp()) {
           
           return false;
         }
@@ -814,19 +796,19 @@ public final class MessageBuffer {
 
       private com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType type_ = com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType.GUESS;
       /**
-       * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 3 [default = GUESS];</code>
+       * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 2 [default = GUESS];</code>
        */
       public boolean hasType() {
         return ((bitField0_ & 0x00000002) == 0x00000002);
       }
       /**
-       * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 3 [default = GUESS];</code>
+       * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 2 [default = GUESS];</code>
        */
       public com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType getType() {
         return type_;
       }
       /**
-       * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 3 [default = GUESS];</code>
+       * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 2 [default = GUESS];</code>
        */
       public Builder setType(com.example.cs217b.ndn_hangman.MessageBuffer.Messages.MessageType value) {
         if (value == null) {
@@ -838,7 +820,7 @@ public final class MessageBuffer {
         return this;
       }
       /**
-       * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 3 [default = GUESS];</code>
+       * <code>required .com.example.cs217b.ndn_hangman.Messages.MessageType type = 2 [default = GUESS];</code>
        */
       public Builder clearType() {
         bitField0_ = (bitField0_ & ~0x00000002);
@@ -847,24 +829,24 @@ public final class MessageBuffer {
         return this;
       }
 
-      private java.lang.Object letter_ = "";
+      private java.lang.Object word_ = "";
       /**
-       * <code>optional string letter = 4;</code>
+       * <code>optional string word = 3;</code>
        */
-      public boolean hasLetter() {
+      public boolean hasWord() {
         return ((bitField0_ & 0x00000004) == 0x00000004);
       }
       /**
-       * <code>optional string letter = 4;</code>
+       * <code>optional string word = 3;</code>
        */
-      public java.lang.String getLetter() {
-        java.lang.Object ref = letter_;
+      public java.lang.String getWord() {
+        java.lang.Object ref = word_;
         if (!(ref instanceof java.lang.String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
           if (bs.isValidUtf8()) {
-            letter_ = s;
+            word_ = s;
           }
           return s;
         } else {
@@ -872,129 +854,85 @@ public final class MessageBuffer {
         }
       }
       /**
-       * <code>optional string letter = 4;</code>
+       * <code>optional string word = 3;</code>
        */
       public com.google.protobuf.ByteString
-          getLetterBytes() {
-        java.lang.Object ref = letter_;
+          getWordBytes() {
+        java.lang.Object ref = word_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          letter_ = b;
+          word_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>optional string letter = 4;</code>
+       * <code>optional string word = 3;</code>
        */
-      public Builder setLetter(
+      public Builder setWord(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000004;
-        letter_ = value;
+        word_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string letter = 4;</code>
+       * <code>optional string word = 3;</code>
        */
-      public Builder clearLetter() {
+      public Builder clearWord() {
         bitField0_ = (bitField0_ & ~0x00000004);
-        letter_ = getDefaultInstance().getLetter();
+        word_ = getDefaultInstance().getWord();
         onChanged();
         return this;
       }
       /**
-       * <code>optional string letter = 4;</code>
+       * <code>optional string word = 3;</code>
        */
-      public Builder setLetterBytes(
+      public Builder setWordBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   bitField0_ |= 0x00000004;
-        letter_ = value;
+        word_ = value;
         onChanged();
         return this;
       }
 
-      private java.lang.Object positions_ = "";
+      private int timestamp_ ;
       /**
-       * <code>optional string positions = 5;</code>
+       * <code>required int32 timestamp = 4;</code>
        */
-      public boolean hasPositions() {
+      public boolean hasTimestamp() {
         return ((bitField0_ & 0x00000008) == 0x00000008);
       }
       /**
-       * <code>optional string positions = 5;</code>
+       * <code>required int32 timestamp = 4;</code>
        */
-      public java.lang.String getPositions() {
-        java.lang.Object ref = positions_;
-        if (!(ref instanceof java.lang.String)) {
-          com.google.protobuf.ByteString bs =
-              (com.google.protobuf.ByteString) ref;
-          java.lang.String s = bs.toStringUtf8();
-          if (bs.isValidUtf8()) {
-            positions_ = s;
-          }
-          return s;
-        } else {
-          return (java.lang.String) ref;
-        }
+      public int getTimestamp() {
+        return timestamp_;
       }
       /**
-       * <code>optional string positions = 5;</code>
+       * <code>required int32 timestamp = 4;</code>
        */
-      public com.google.protobuf.ByteString
-          getPositionsBytes() {
-        java.lang.Object ref = positions_;
-        if (ref instanceof String) {
-          com.google.protobuf.ByteString b = 
-              com.google.protobuf.ByteString.copyFromUtf8(
-                  (java.lang.String) ref);
-          positions_ = b;
-          return b;
-        } else {
-          return (com.google.protobuf.ByteString) ref;
-        }
-      }
-      /**
-       * <code>optional string positions = 5;</code>
-       */
-      public Builder setPositions(
-          java.lang.String value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        positions_ = value;
+      public Builder setTimestamp(int value) {
+        bitField0_ |= 0x00000008;
+        timestamp_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>optional string positions = 5;</code>
+       * <code>required int32 timestamp = 4;</code>
        */
-      public Builder clearPositions() {
+      public Builder clearTimestamp() {
         bitField0_ = (bitField0_ & ~0x00000008);
-        positions_ = getDefaultInstance().getPositions();
-        onChanged();
-        return this;
-      }
-      /**
-       * <code>optional string positions = 5;</code>
-       */
-      public Builder setPositionsBytes(
-          com.google.protobuf.ByteString value) {
-        if (value == null) {
-    throw new NullPointerException();
-  }
-  bitField0_ |= 0x00000008;
-        positions_ = value;
+        timestamp_ = 0;
         onChanged();
         return this;
       }
@@ -1025,12 +963,12 @@ public final class MessageBuffer {
   static {
     java.lang.String[] descriptorData = {
       "\n\016messages.proto\022\036com.example.cs217b.ndn" +
-      "_hangman\"\312\001\n\010Messages\022\014\n\004name\030\001 \002(\t\022I\n\004t" +
-      "ype\030\003 \002(\01624.com.example.cs217b.ndn_hangm" +
-      "an.Messages.MessageType:\005GUESS\022\016\n\006letter" +
-      "\030\004 \001(\t\022\021\n\tpositions\030\005 \001(\t\"B\n\013MessageType" +
-      "\022\t\n\005GUESS\020\000\022\010\n\004EVAL\020\001\022\010\n\004JOIN\020\002\022\t\n\005LEAVE" +
-      "\020\003\022\t\n\005OTHER\020\004B\017B\rMessageBuffer"
+      "_hangman\"\323\001\n\010Messages\022\014\n\004name\030\001 \002(\t\022I\n\004t" +
+      "ype\030\002 \002(\01624.com.example.cs217b.ndn_hangm" +
+      "an.Messages.MessageType:\005GUESS\022\014\n\004word\030\003" +
+      " \001(\t\022\021\n\ttimestamp\030\004 \002(\005\"M\n\013MessageType\022\t" +
+      "\n\005GUESS\020\000\022\010\n\004EVAL\020\001\022\010\n\004JOIN\020\002\022\t\n\005LEAVE\020\003" +
+      "\022\t\n\005HELLO\020\004\022\t\n\005OTHER\020\005B\017B\rMessageBuffer"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1049,7 +987,7 @@ public final class MessageBuffer {
     internal_static_com_example_cs217b_ndn_hangman_Messages_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_com_example_cs217b_ndn_hangman_Messages_descriptor,
-        new java.lang.String[] { "Name", "Type", "Letter", "Positions", });
+        new java.lang.String[] { "Name", "Type", "Word", "Timestamp", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
