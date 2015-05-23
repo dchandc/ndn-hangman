@@ -9,7 +9,8 @@ message Messages {
         EVAL = 1;
         JOIN = 2;
         LEAVE = 3;
-        OTHER = 4;
+        HELLO = 4;
+        OTHER = 5;
     }
     required MessageType type = 3 [default = GUESS];
     optional string letter = 4;
