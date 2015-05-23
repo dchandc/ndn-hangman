@@ -1,10 +1,5 @@
 package com.example.cs217b.ndn_hangman;
 
-import android.app.IntentService;
-import android.app.Service;
-import android.content.Intent;
-import android.os.IBinder;
-
 import net.named_data.jndn.*;
 import net.named_data.jndn.sync.*;
 import net.named_data.jndn.security.*;
@@ -15,7 +10,7 @@ import java.util.List;
 import java.util.logging.*;
 import java.util.Random;
 
-class SyncHandler implements ChronoSync2013.OnInitialized,
+public class GameSync implements ChronoSync2013.OnInitialized,
         ChronoSync2013.OnReceivedSyncState, OnData, OnInterestCallback {
     public String playerName_;
     public String userName_;
@@ -30,7 +25,7 @@ class SyncHandler implements ChronoSync2013.OnInitialized,
     private final double syncLifetime_ = 5000.0; // milliseconds
     private final int maxMessageCacheLength_ = 100;
 
-    public SyncHandler(String playerName, String gameName, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
+    public GameSync(String playerName, String gameName, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
         playerName_ = playerName;
         gameName_ = gameName;
         face_ = face;
@@ -45,7 +40,7 @@ class SyncHandler implements ChronoSync2013.OnInitialized,
         try {
             sync_ = new ChronoSync2013
                     (this, this, gamePrefix_,
-                            new Name("/ndn/broadcast/hangman").append(gameName_), session,
+                            new Name("/ndn/edu/ucla/hangman/broadcast").append(gameName_), session,
                             face, keyChain, certificateName, syncLifetime_, RegisterFailed.onRegisterFailed_);
         } catch (Exception ex) {
             Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
@@ -141,32 +136,3 @@ class SyncHandler implements ChronoSync2013.OnInitialized,
         }
     }
 }
-
-public class GameSync extends IntentService {
-    public ChronoSync2013 sync;
-    public ReceivedSyncState rec;
-    public ArrayList messages;
-
-    public GameSync(String name) {
-        super(name);
-    }
-
-    public class ReceivedSyncState implements ChronoSync2013.OnReceivedSyncState {
-        @Override
-        public void onReceivedSyncState(List syncStates, boolean isRecovery) {
-
-        }
-    }
-
-    @Override
-    protected void onHandleIntent(Intent intent) {
-
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-}
-
