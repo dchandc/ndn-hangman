@@ -1,9 +1,12 @@
 package com.example.cs217b.ndn_hangman;
 
+import android.os.Message;
+
 import net.named_data.jndn.*;
 import net.named_data.jndn.sync.*;
 import net.named_data.jndn.security.*;
 import net.named_data.jndn.OnRegisterFailed;
+import com.example.cs217b.ndn_hangman.MessageBuffer.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +54,22 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             face.registerPrefix(gamePrefix_, this, RegisterFailed.onRegisterFailed_);
         } catch (Exception ex) {
             Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    // Send a chat message.
+    public final void
+    sendGuessMessage(String guess) throws Exception
+    {
+        if (messageCache_.size() == 0)
+            messageCacheAppend(MessageBuffer.Messages.MessageType.JOIN, "xxx");
+
+        // Ignore an empty message.
+        // forming Sync Data Packet.
+        if (!guess.equals("")) {
+            sync_.publishNextSequenceNo();
+            messageCacheAppend(MessageBuffer.Messages.MessageType.GUESS, guess);
+            System.out.println(playerName_ + ": " + guess);
         }
     }
 
@@ -122,7 +141,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                 Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
                 return;
             }
-            //messageCacheAppend(ChatMessage.ChatMessageType.HELLO, "xxx");
+//            messageCacheAppend(ChatMessage.ChatMessageType.HELLO, "xxx");
 
             // Call again.
             // TODO: Are we sure using a "/local/timeout" interest is the best future call approach?
