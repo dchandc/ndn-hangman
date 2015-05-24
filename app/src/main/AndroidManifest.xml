@@ -28,12 +28,9 @@
             android:name=".LoadGame"
             android:label="@string/title_activity_load_game" >
         </activity>
-
-        <service
-            android:name=".GameSync"
-            android:enabled="true"
-            android:exported="false" >
-        </service>
+        <activity
+            android:name=".JoinGameActivity"
+            android:label="@string/title_activity_join_game" >
+        </activity>
     </application>
-
 </manifest>
