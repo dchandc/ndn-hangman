@@ -10,8 +10,6 @@ import android.view.View;
 import android.widget.Button;
 
 public class MainActivity extends ActionBarActivity {
-    public static GameSync sync;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
