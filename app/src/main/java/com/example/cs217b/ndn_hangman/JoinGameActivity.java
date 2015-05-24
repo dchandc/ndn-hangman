@@ -57,13 +57,22 @@ public class JoinGameActivity extends ActionBarActivity {
         });
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        joinTask.faceThread.interrupt();
+        joinTask.cancel(true);
+    }
+
     public class JoinTask extends AsyncTask<Void, ArrayList<String>, String> {
         private final String hubPrefix = "/ndn/edu/ucla/hangman/app";
         private final String host = "localhost";
+        private final Face face =  new Face(host);
         private Object lock;
         private GameSync gs;
         private String name;
         private String room;
+        private Thread faceThread;
 
         public JoinTask(String name, String room, Object lock) {
             this.lock = lock;
@@ -74,7 +83,6 @@ public class JoinGameActivity extends ActionBarActivity {
         @Override
         protected String doInBackground(Void... ignored) {
             try {
-                Face face = new Face(host);
                 MemoryIdentityStorage identityStorage = new MemoryIdentityStorage();
                 MemoryPrivateKeyStorage privateKeyStorage = new MemoryPrivateKeyStorage();
                 KeyChain keyChain = new KeyChain
@@ -90,21 +98,35 @@ public class JoinGameActivity extends ActionBarActivity {
                 face.setCommandSigningInfo(keyChain, certificateName);
 
                 gs = new GameSync(name, room, new Name(hubPrefix), face, keyChain, certificateName);
-                while(true) {
-                    gs.sendGuessMessage("TEST");
-
-                    try {
-                        Thread.sleep(1000);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                    face.processEvents();
-
-                    publishProgress(gs.roster_);
-                }
             } catch (Exception e) {
                 e.printStackTrace();
+                return null;
+            }
+
+            faceThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (!Thread.interrupted()) {
+                        try {
+                            face.processEvents();
+                            Thread.sleep(10);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+            faceThread.start();
+
+            while (!isCancelled()) {
+                try {
+                    gs.sendGuessMessage("TEST");
+                    Thread.sleep(1000);
+                    Log.i("join", "Check roster");
+                    publishProgress(gs.roster_);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
             return "FAIL";
