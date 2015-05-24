@@ -1,6 +1,7 @@
 package com.example.cs217b.ndn_hangman;
 
 import android.os.Message;
+import android.util.Log;
 
 import net.named_data.jndn.*;
 import net.named_data.jndn.sync.*;
@@ -127,7 +128,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
 
             if (l == roster_.size()) {
                 roster_.add(nameAndSession);
-                System.out.println(name + ": Join");
+                Log.i("Join Received", nameAndSession);
             }
 
             // Set the alive timeout using the Interest timeout mechanism.
@@ -150,12 +151,14 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                     !isHost) {
                 gameState = content.getWord();
                 lastGuesser = content.getName();
+                Log.i("GameSync Received Eval", gameState);
                 changedState = true; //or call static method in game activity to signal new game state
             }
             else if (content.getType().equals(Messages.MessageType.GUESS) && !content.getName().equals(playerName_) &&
                     isHost) {
                 lastGuess = content.getWord();
                 lastGuesser = content.getName();
+                Log.i("GameSync Received Guess", lastGuess);
                 guessReceived = true; //or call static method in game activity to signal guess received
             }
             else if (content.getType().equals(Messages.MessageType.LEAVE)) {
