@@ -4,6 +4,7 @@ import android.os.Message;
 import android.util.Log;
 
 import net.named_data.jndn.*;
+import net.named_data.jndn.security.SecurityException;
 import net.named_data.jndn.sync.*;
 import net.named_data.jndn.security.*;
 import net.named_data.jndn.OnRegisterFailed;
@@ -27,13 +28,13 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     public String playerName_;
     public String userName_;
     public String gameName_;
-    public ArrayList<String> roster_ = new ArrayList<String>();
+    public ArrayList roster_ = new ArrayList();
     public Face face_;
     public KeyChain keyChain_;
     public Name certificateName_;
     public Name gamePrefix_;
     private OnTimeout heartbeat_;
-    public ArrayList messageCache_;
+    public ArrayList messageCache_ = new ArrayList();
     public ChronoSync2013 sync_;
     private final double syncLifetime_ = 5000.0; // milliseconds
     private final int maxMessageCacheLength_ = 100;
@@ -68,6 +69,15 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         }
     }
 
+    // Send a join message
+    public final void
+    sendJoinMessage() throws IOException, SecurityException
+    {
+        sync_.publishNextSequenceNo();
+        messageCacheAppend(Messages.MessageType.JOIN, "xxx");
+        Log.i("Message Sent", "Join");
+    }
+
     // Send a chat message.
     public final void
     sendGuessMessage(String guess) throws Exception
@@ -80,7 +90,8 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         if (!guess.equals("")) {
             sync_.publishNextSequenceNo();
             messageCacheAppend(Messages.MessageType.GUESS, guess);
-            System.out.println(playerName_ + ": " + guess);
+            Log.i("Player Guessed", playerName_);
+            Log.i("Guess Sent", guess);
         }
     }
 
@@ -89,7 +100,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     {
         sync_.publishNextSequenceNo();
         messageCacheAppend(Messages.MessageType.EVAL, gameState);
-        System.out.println("Evaluation: " + gameState);
+        Log.i("Evaluation Sent", gameState);
     }
 
     @Override
@@ -128,7 +139,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
 
             if (l == roster_.size()) {
                 roster_.add(nameAndSession);
-                Log.i("Join Received", nameAndSession);
+                Log.i("Joined", nameAndSession);
             }
 
             // Set the alive timeout using the Interest timeout mechanism.
@@ -151,14 +162,15 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                     !isHost) {
                 gameState = content.getWord();
                 lastGuesser = content.getName();
-                Log.i("GameSync Received Eval", gameState);
+                Log.i("Received Eval", gameState);
                 changedState = true; //or call static method in game activity to signal new game state
             }
             else if (content.getType().equals(Messages.MessageType.GUESS) && !content.getName().equals(playerName_) &&
                     isHost) {
                 lastGuess = content.getWord();
                 lastGuesser = content.getName();
-                Log.i("GameSync Received Guess", lastGuess);
+                Log.i("Guesser", lastGuesser);
+                Log.i("Received Guess", lastGuess);
                 guessReceived = true; //or call static method in game activity to signal guess received
             }
             else if (content.getType().equals(Messages.MessageType.LEAVE)) {
@@ -166,7 +178,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                 int n = roster_.indexOf(nameAndSession);
                 if (n >= 0 && !name.equals(playerName_)) {
                     roster_.remove(n);
-                    System.out.println(name + ": Leave");
+                    Log.i("Leave", name);
                 }
             }
         }
@@ -184,17 +196,25 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         Interest timeout = new Interest(new Name("/local/timeout"));
         timeout.setInterestLifetimeMilliseconds(60000);
         try {
+            Log.i("Init", "timeout started");
             face_.expressInterest(timeout, DummyOnData.onData_, heartbeat_);
         } catch (IOException ex) {
-            Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
 
         if (roster_.indexOf(userName_) < 0) {
             roster_.add(userName_);
-            System.out.println("Member: " + playerName_);
-            System.out.println(playerName_ + ": Join");
-            messageCacheAppend(Messages.MessageType.JOIN, "xxx");
+            try {
+                sendJoinMessage();
+                Log.i("Init", "Join sent");
+            } catch (IOException e) {
+                Log.i("Init Error (sendJoin)", e.getLocalizedMessage());
+                e.printStackTrace();
+            } catch (SecurityException e) {
+                Log.i("Init Error (sendJoin)", e.getLocalizedMessage());
+                e.printStackTrace();
+            }
         }
     }
 
@@ -223,6 +243,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                     builder.setTimestamp((int) Math.round(message.getTime() / 1000.0));
                 }
                 gotContent = true;
+                Log.i("Message Prepared", message.getMessageType().name() + ": " + message.getMessage());
                 break;
             }
         }
@@ -235,13 +256,14 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             try {
                 keyChain_.sign(data, certificateName_);
             } catch (Exception ex) {
-                Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
                 return;
             }
             try {
                 face.putData(data);
+                Log.i("Data Sent", data.getContent().toString());
             } catch (IOException ex) {
-                Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
@@ -303,7 +325,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         public final void
         onTimeout(Interest interest) {
             if (messageCache_.size() == 0)
-                //messageCacheAppend(ChatMessage.ChatMessageType.JOIN, "xxx");
+                messageCacheAppend(Messages.MessageType.JOIN, "xxx");
 
                 try {
                     sync_.publishNextSequenceNo();
@@ -311,14 +333,14 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                     Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
                     return;
                 }
-            //messageCacheAppend(ChatMessage.ChatMessageType.HELLO, "xxx");
+            messageCacheAppend(Messages.MessageType.HELLO, "xxx");
 
             // Call again.
             // TODO: Are we sure using a "/local/timeout" interest is the best future call approach?
             Interest timeout = new Interest(new Name("/local/timeout"));
             timeout.setInterestLifetimeMilliseconds(60000);
             try {
-                //face_.expressInterest(timeout, DummyOnData.onData_, heartbeat_);
+                face_.expressInterest(timeout, DummyOnData.onData_, heartbeat_);
             } catch (Exception ex) {
                 Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -329,6 +351,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         public final void
         onTimeout(Interest interest) {
             System.out.println("Timeout waiting for chat data");
+
         }
 
         public final static OnTimeout onTimeout_ = new ChatTimeout();
@@ -419,7 +442,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     private void
     messageCacheAppend(MessageBuffer.Messages.MessageType messageType, String message)
     {
-        //messageCache_.add(new CachedMessage(sync_.getSequenceNo(), messageType, message, getNowMilliseconds()));
+        messageCache_.add(new CachedMessage(sync_.getSequenceNo(), messageType, message, getNowMilliseconds()));
         while (messageCache_.size() > maxMessageCacheLength_)
             messageCache_.remove(0);
     }
