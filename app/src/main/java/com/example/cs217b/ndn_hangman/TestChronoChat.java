@@ -52,7 +52,7 @@ class Chat implements ChronoSync2013.OnInitialized,
         try {
             sync_ = new ChronoSync2013
                     (this, this, chatPrefix_,
-                            new Name("/ndn/broadcast/ChronoChat-0.3").append(chatRoom_), session,
+                            new Name("/ndn/edu/ucla/hangman/broadcast").append(chatRoom_), session,
                             face, keyChain, certificateName, syncLifetime_, RegisterFailed.onRegisterFailed_);
         } catch (IOException | SecurityException ex) {
             Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
@@ -97,7 +97,7 @@ class Chat implements ChronoSync2013.OnInitialized,
      */
     public static double
     getNowMilliseconds() { return (double)System.currentTimeMillis(); }
-
+//asdfasdf;kajsf
     // initial: push the JOIN message in to the messageCache_, update roster and
     // start the heartbeat.
     // (Do not call this. It is only public to implement the interface.)
