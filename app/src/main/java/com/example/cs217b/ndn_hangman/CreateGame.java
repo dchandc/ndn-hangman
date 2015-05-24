@@ -1,52 +1,72 @@
 package com.example.cs217b.ndn_hangman;
 
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 
 import net.named_data.jndn.*;
+import net.named_data.jndn.security.*;
 import net.named_data.jndn.security.SecurityException;
+import net.named_data.jndn.security.identity.*;
+import net.named_data.jndn.security.policy.NoVerifyPolicyManager;
 import net.named_data.jndn.transport.Transport;
+import net.named_data.jndn.util.Blob;
 
 import java.io.IOException;
 
 public class CreateGame extends ActionBarActivity {
-    private Face createGameFace;
+    public GameSync sync_;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_game);
 
-        createGameFace = new Face("spurs.cs.ucla.edu");
-        /*
-        try {
-            createGameFace.setCommandSigningInfo(MainActivity.keychain, MainActivity.keychain.getDefaultCertificateName());
-        }
-        catch (SecurityException e) {
-            Log.d("SecurityException", e.getLocalizedMessage());
-        }
-        */
-        try {
-            createGameFace.registerPrefix(new Name("/ndn/hangman/public/lobby/room1"),
-                    new OnInterest() {
-                        @Override
-                        public void onInterest(Name prefix, Interest interest, Transport transport, long interestFilterId) {
+        Button button_create = (Button) findViewById(R.id.createButton);
+        button_create.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("clicks", "Create Game button clicked");
+                EditText gameName = (EditText) findViewById(R.id.roomName);
+                EditText playerName = (EditText) findViewById(R.id.playerName);
 
-                        }
-                    },
-                    new OnRegisterFailed() {
-                        @Override
-                        public void onRegisterFailed(Name prefix) {
+                Name hubPrefix = new Name("ndn/edu/ucla/cs/hangman");
+                String gameName_ = gameName.getText().toString();
+                String playerName_ = playerName.getText().toString();
+                String host = "spurs.cs.ucla.edu";
 
-                        }
-                    }
-            );
-        } catch (Exception er) {
-            Log.d("Exception", er.getLocalizedMessage());
-        }
+                Face face = new Face(host);
+
+                MemoryIdentityStorage identityStorage = new MemoryIdentityStorage();
+                MemoryPrivateKeyStorage privateKeyStorage = new MemoryPrivateKeyStorage();
+                KeyChain keyChain = new KeyChain
+                        (new IdentityManager(identityStorage, privateKeyStorage),
+                                new NoVerifyPolicyManager());
+                keyChain.setFace(face);
+                Name keyName = new Name("/testname/DSK-123");
+                Name certificateName = keyName.getSubName(0, keyName.size() - 1).append
+                        ("KEY").append(keyName.get(-1)).append("ID-CERT").append("0");
+                try {
+                    identityStorage.addKey(keyName, KeyType.RSA, new Blob(Keys.DEFAULT_RSA_PUBLIC_KEY_DER, false));
+                    privateKeyStorage.setKeyPairForKeyName
+                            (keyName, KeyType.RSA, Keys.DEFAULT_RSA_PUBLIC_KEY_DER, Keys.DEFAULT_RSA_PRIVATE_KEY_DER);
+                } catch (SecurityException e) {
+                    Log.i("exception: ", e.getLocalizedMessage());
+                }
+                face.setCommandSigningInfo(keyChain, certificateName);
+
+                sync_ = new GameSync(playerName_,gameName_,hubPrefix,face,keyChain,certificateName);
+                sync_.isHost = true;
+                Intent intent = new Intent(CreateGame.this, NewGameActivity.class);
+                startActivity(intent);
+            }
+        });
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.example.cs217b.ndn_hangman;
 
 import android.os.Message;
+import android.util.Log;
 
 import net.named_data.jndn.*;
 import net.named_data.jndn.sync.*;
@@ -17,6 +18,12 @@ import java.util.Random;
 
 public class GameSync implements ChronoSync2013.OnInitialized,
         ChronoSync2013.OnReceivedSyncState, OnData, OnInterestCallback {
+    public boolean changedState;
+    public boolean guessReceived;
+    public boolean isHost = false;
+    public String lastGuesser;
+    public String gameState;
+    public String lastGuess;
     public String playerName_;
     public String userName_;
     public String gameName_;
@@ -77,6 +84,14 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         }
     }
 
+    public final void
+    sendEval(String gameState) throws  Exception
+    {
+        sync_.publishNextSequenceNo();
+        messageCacheAppend(Messages.MessageType.EVAL, gameState);
+        System.out.println("Evaluation: " + gameState);
+    }
+
     @Override
     // Process the incoming Chat data.
     // (Do not call this. It is only public to implement the interface.)
@@ -113,7 +128,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
 
             if (l == roster_.size()) {
                 roster_.add(nameAndSession);
-                System.out.println(name + ": Join");
+                Log.i("Join Received", nameAndSession);
             }
 
             // Set the alive timeout using the Interest timeout mechanism.
@@ -132,9 +147,20 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             // isRecoverySyncState_ was set by sendInterest.
             // TODO: If isRecoverySyncState_ changed, this assumes that we won't get
             //   data from an interest sent before it changed.
-            if ((content.getType().equals(Messages.MessageType.GUESS) || content.getType().equals(Messages.MessageType.EVAL)) &&
-                    !isRecoverySyncState_ && !content.getName().equals(playerName_))
-                System.out.println(content.getName() + ": " + content.getWord());
+            if (content.getType().equals(Messages.MessageType.EVAL) && !content.getName().equals(playerName_) &&
+                    !isHost) {
+                gameState = content.getWord();
+                lastGuesser = content.getName();
+                Log.i("GameSync Received Eval", gameState);
+                changedState = true; //or call static method in game activity to signal new game state
+            }
+            else if (content.getType().equals(Messages.MessageType.GUESS) && !content.getName().equals(playerName_) &&
+                    isHost) {
+                lastGuess = content.getWord();
+                lastGuesser = content.getName();
+                Log.i("GameSync Received Guess", lastGuess);
+                guessReceived = true; //or call static method in game activity to signal guess received
+            }
             else if (content.getType().equals(Messages.MessageType.LEAVE)) {
                 // leave message
                 int n = roster_.indexOf(nameAndSession);
@@ -252,6 +278,19 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                 }
             }
         }
+
+        for (int i = 0; i < sendList.size(); ++i) {
+            String uri = (String)sendList.get(i) + "/" + (long)sessionNoList.get(i) +
+                    "/" + (long)sequenceNoList.get(i);
+            Interest interest = new Interest(new Name(uri));
+            interest.setInterestLifetimeMilliseconds(syncLifetime_);
+            try {
+                face_.expressInterest(interest, this, ChatTimeout.onTimeout_);
+            } catch (IOException ex) {
+                Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+                return;
+            }
+        }
     }
 
     /**
@@ -284,6 +323,15 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                 Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+
+    private static class ChatTimeout implements OnTimeout {
+        public final void
+        onTimeout(Interest interest) {
+            System.out.println("Timeout waiting for chat data");
+        }
+
+        public final static OnTimeout onTimeout_ = new ChatTimeout();
     }
 
     /**
