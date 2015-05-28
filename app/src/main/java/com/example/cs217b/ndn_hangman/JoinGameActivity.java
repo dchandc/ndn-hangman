@@ -60,7 +60,6 @@ public class JoinGameActivity extends ActionBarActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        joinTask.faceThread.interrupt();
         joinTask.cancel(true);
     }
 
@@ -98,6 +97,7 @@ public class JoinGameActivity extends ActionBarActivity {
                 face.setCommandSigningInfo(keyChain, certificateName);
 
                 gs = new GameSync(name, room, new Name(hubPrefix), face, keyChain, certificateName);
+                gs.onInitialized();
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -120,13 +120,22 @@ public class JoinGameActivity extends ActionBarActivity {
 
             while (!isCancelled()) {
                 try {
-                    gs.sendGuessMessage("TEST");
                     Thread.sleep(1000);
                     Log.i("join", "Check roster");
                     publishProgress(gs.roster_);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+
+            Log.i("join", "Cleaning up");
+            try {
+                gs.sendLeave();
+                Thread.sleep(5000);
+                gs.sync_.shutdown();
+                faceThread.interrupt();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             return "FAIL";

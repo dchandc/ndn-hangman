@@ -103,6 +103,14 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         Log.i("Evaluation Sent", gameState);
     }
 
+    public final void
+    sendLeave() throws IOException, SecurityException
+    {
+        sync_.publishNextSequenceNo();
+        messageCacheAppend(Messages.MessageType.LEAVE, "xxx");
+        Log.i("gamesync", "Sent LEAVE message");
+    }
+
     @Override
     // Process the incoming Chat data.
     // (Do not call this. It is only public to implement the interface.)
@@ -115,6 +123,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
+        Log.i("onData", content.getName().toString() + " " + content.getType().toString());
         if (getNowMilliseconds() - content.getTimestamp() * 1000.0 < 120000.0) {
             String name = content.getName();
             String prefix = data.getName().getPrefix(-2).toUri();
@@ -309,7 +318,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             try {
                 face_.expressInterest(interest, this, ChatTimeout.onTimeout_);
             } catch (IOException ex) {
-                Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
                 return;
             }
         }
@@ -330,7 +339,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                 try {
                     sync_.publishNextSequenceNo();
                 } catch (Exception ex) {
-                    Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
                     return;
                 }
             messageCacheAppend(Messages.MessageType.HELLO, "xxx");
@@ -342,7 +351,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             try {
                 face_.expressInterest(timeout, DummyOnData.onData_, heartbeat_);
             } catch (Exception ex) {
-                Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
