@@ -32,6 +32,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     public KeyChain keyChain_;
     public Name certificateName_;
     public Name gamePrefix_;
+    public String randomString_;
     public boolean done = false;
     private OnTimeout heartbeat_;
     public ArrayList<CachedMessage> messageCache_ = new ArrayList<>();
@@ -46,9 +47,10 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         keyChain_ = keyChain;
         certificateName_ = certificateName;
         heartbeat_ = this.new Heartbeat();
+        randomString_ = getRandomString();
 
         // This should only be called once, so get the random string here.
-        gamePrefix_ = new Name(hubPrefix).append(gameName_).append(getRandomString());
+        gamePrefix_ = new Name(hubPrefix).append(gameName_).append(randomString_);
         int session = (int)Math.round(getNowMilliseconds() / 1000.0);
         userName_ = playerName_ + session;
         try {
@@ -112,71 +114,69 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             return;
         }
         Log.i("gamesync", "[onData] " + content.getName() + " (" + content.getType() + ")");
-        if (getNowMilliseconds() - content.getTimestamp() * 1000.0 < 120000.0) {
-            String name = content.getName();
-            String prefix = data.getName().getPrefix(-2).toUri();
-            long sessionNo = Long.parseLong(data.getName().get(-2).toEscapedString());
-            long sequenceNo = Long.parseLong(data.getName().get(-1).toEscapedString());
-            String nameAndSession = name + sessionNo;
+        String name = content.getName();
+        String prefix = data.getName().getPrefix(-2).toUri();
+        long sessionNo = Long.parseLong(data.getName().get(-2).toEscapedString());
+        long sequenceNo = Long.parseLong(data.getName().get(-1).toEscapedString());
+        String nameAndSession = name + sessionNo;
 
-            int l = 0;
-            //update roster
-            while (l < roster_.size()) {
-                String entry = roster_.get(l);
-                String tempName = entry.substring(0, entry.length() - 10);
-                long tempSessionNo = Long.parseLong(entry.substring(entry.length() - 10));
-                if (!name.equals(tempName) && !content.getType().equals(Messages.MessageType.LEAVE))
-                    ++l;
-                else {
-                    if (name.equals(tempName) && sessionNo > tempSessionNo)
-                        roster_.set(l, nameAndSession);
-                    break;
-                }
+        int l = 0;
+        //update roster
+        while (l < roster_.size()) {
+            String entry = roster_.get(l);
+            String tempName = entry.substring(0, entry.length() - 10);
+            long tempSessionNo = Long.parseLong(entry.substring(entry.length() - 10));
+            if (!name.equals(tempName) && !content.getType().equals(Messages.MessageType.LEAVE))
+                ++l;
+            else {
+                if (name.equals(tempName) && sessionNo > tempSessionNo)
+                    roster_.set(l, nameAndSession);
+                break;
             }
+        }
 
-            if (l == roster_.size()) {
-                roster_.add(nameAndSession);
-                Log.i("Joined", nameAndSession);
-            }
+        if (l == roster_.size()) {
+            roster_.add(nameAndSession);
+            Log.i("Joined", nameAndSession);
+        }
 
-            // Set the alive timeout using the Interest timeout mechanism.
-            // TODO: Are we sure using a "/local/timeout" interest is the best future call approach?
-            Interest timeout = new Interest(new Name("/local/timeout"));
-            timeout.setInterestLifetimeMilliseconds(120000);
-            try {
-                face_.expressInterest
-                        (timeout, DummyOnData.onData_,
-                                this.new Alive(sequenceNo, name, sessionNo, prefix));
-            } catch (IOException ex) {
-                Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
-                return;
-            }
+        // Set the alive timeout using the Interest timeout mechanism.
+        // TODO: Are we sure using a "/local/timeout" interest is the best future call approach?
+        Interest timeout = new Interest(new Name("/local/timeout"));
+        timeout.setInterestLifetimeMilliseconds(120000);
+        try {
+            face_.expressInterest
+                    (timeout, DummyOnData.onData_,
+                            this.new Alive(sequenceNo, name, sessionNo, prefix));
+        } catch (IOException ex) {
+            Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
+            return;
+        }
 
-            // isRecoverySyncState_ was set by sendInterest.
-            // TODO: If isRecoverySyncState_ changed, this assumes that we won't get
-            //   data from an interest sent before it changed.
-            if (content.getType().equals(Messages.MessageType.EVAL) && !content.getName().equals(playerName_) &&
-                    !isHost) {
-                gameState = content.getWord();
-                lastGuesser = content.getName();
-                Log.i("Received Eval", gameState);
-                changedState = true; //or call static method in game activity to signal new game state
-            }
-            else if (content.getType().equals(Messages.MessageType.GUESS) && !content.getName().equals(playerName_) &&
-                    isHost) {
-                lastGuess = content.getWord();
-                lastGuesser = content.getName();
-                Log.i("Guesser", lastGuesser);
-                Log.i("Received Guess", lastGuess);
-                guessReceived = true; //or call static method in game activity to signal guess received
-            }
-            else if (content.getType().equals(Messages.MessageType.LEAVE)) {
-                // leave message
-                int n = roster_.indexOf(nameAndSession);
-                if (n >= 0 && !name.equals(playerName_)) {
-                    roster_.remove(n);
-                    Log.i("Leave", name);
-                }
+        // isRecoverySyncState_ was set by sendInterest.
+        // TODO: If isRecoverySyncState_ changed, this assumes that we won't get
+        //   data from an interest sent before it changed.
+        if (content.getType().equals(Messages.MessageType.EVAL) && !content.getName().equals(playerName_) &&
+                !isHost) {
+            gameState = content.getWord();
+            lastGuesser = content.getName();
+            Log.i("Received Eval", gameState);
+            changedState = true; //or call static method in game activity to signal new game state
+        }
+        else if (content.getType().equals(Messages.MessageType.GUESS) && !content.getName().equals(playerName_) &&
+                isHost) {
+            lastGuess = content.getWord();
+            lastGuesser = content.getName();
+            Log.i("Guesser", lastGuesser);
+            Log.i("Received Guess", lastGuess);
+            guessReceived = true; //or call static method in game activity to signal guess received
+        }
+        else if (content.getType().equals(Messages.MessageType.LEAVE)) {
+            // leave message
+            int n = roster_.indexOf(nameAndSession);
+            if (n >= 0 && !name.equals(playerName_)) {
+                roster_.remove(n);
+                Log.i("Leave", name);
             }
         }
     }
@@ -301,7 +301,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         onTimeout(Interest interest) {
             Log.i("gamesync", "[Heartbeat] timed out");
             if (messageCache_.size() == 0)
-                messageCacheAppend(Messages.MessageType.JOIN, "xxx");
+                messageCacheAppend(Messages.MessageType.JOIN, randomString_);
 
             try {
                 sync_.publishNextSequenceNo();
@@ -416,7 +416,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     sendJoinMessage() throws IOException, SecurityException
     {
         sync_.publishNextSequenceNo();
-        messageCacheAppend(Messages.MessageType.JOIN, "xxx");
+        messageCacheAppend(Messages.MessageType.JOIN, randomString_);
         Log.i("gamesync", "[sendJoinMessage]");
     }
 
@@ -425,7 +425,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     sendGuessMessage(String guess) throws Exception
     {
         if (messageCache_.size() == 0)
-            messageCacheAppend(Messages.MessageType.JOIN, "xxx");
+            messageCacheAppend(Messages.MessageType.JOIN, randomString_);
 
         // Ignore an empty message.
         // forming Sync Data Packet.

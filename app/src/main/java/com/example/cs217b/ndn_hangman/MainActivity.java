@@ -22,6 +22,7 @@ public class MainActivity extends ActionBarActivity {
                 Log.i("clicks", "New Game button clicked");
                 Intent intent = new Intent(MainActivity.this, NewGameActivity.class);
                 startActivity(intent);
+                finish();
             }
         });
 
@@ -32,6 +33,7 @@ public class MainActivity extends ActionBarActivity {
                 Log.i("clicks", "Create Game button clicked");
                 Intent intent = new Intent(MainActivity.this, CreateGame.class);
                 startActivity(intent);
+                finish();
             }
         });
 
@@ -42,6 +44,7 @@ public class MainActivity extends ActionBarActivity {
                 Log.i("clicks", "Join Game button clicked");
                 Intent intent = new Intent(MainActivity.this, JoinGameActivity.class);
                 startActivity(intent);
+                finish();
             }
         });
 
@@ -52,6 +55,7 @@ public class MainActivity extends ActionBarActivity {
                 Log.i("clicks", "Load Game button clicked");
                 Intent intent = new Intent(MainActivity.this, LoadGame.class);
                 startActivity(intent);
+                finish();
             }
         });
     }
