@@ -20,17 +20,12 @@ import net.named_data.jndn.security.policy.NoVerifyPolicyManager;
 import net.named_data.jndn.util.Blob;
 
 import java.util.ArrayList;
-import java.util.Random;
 
-/**
- * Created by Dennis on 5/24/2015.
- */
 public class JoinGameActivity extends ActionBarActivity {
     private Object lock;
     private JoinTask joinTask;
     private EditText etv_name;
     private EditText etv_room;
-    private Button btn_startjoin;
     private TextView tv_roster;
 
     @Override
@@ -40,9 +35,9 @@ public class JoinGameActivity extends ActionBarActivity {
 
         etv_name = (EditText) findViewById(R.id.etext_name);
         etv_room = (EditText) findViewById(R.id.etext_room);
-        btn_startjoin = (Button) findViewById(R.id.button_startjoin);
         tv_roster = (TextView) findViewById(R.id.text_roster);
 
+        Button btn_startjoin = (Button) findViewById(R.id.button_startjoin);
         btn_startjoin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -121,7 +116,6 @@ public class JoinGameActivity extends ActionBarActivity {
             while (!isCancelled()) {
                 try {
                     Thread.sleep(1000);
-                    Log.i("join", "Check roster");
                     publishProgress(gs.roster_);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -130,9 +124,10 @@ public class JoinGameActivity extends ActionBarActivity {
 
             Log.i("join", "Cleaning up");
             try {
-                gs.sendLeave();
-                Thread.sleep(5000);
+                gs.sendLeaveMessage();
+                Thread.sleep(10000);
                 gs.sync_.shutdown();
+                gs.done = true;
                 faceThread.interrupt();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -147,7 +142,8 @@ public class JoinGameActivity extends ActionBarActivity {
             StringBuilder sb = new StringBuilder("");
             for (int i = 0; i < roster.size(); i++) {
                 String playerName = roster.get(i);
-                sb.append(playerName + "\n");
+                sb.append(playerName);
+                sb.append("\n");
             }
             tv_roster.setText(sb.toString());
         }
