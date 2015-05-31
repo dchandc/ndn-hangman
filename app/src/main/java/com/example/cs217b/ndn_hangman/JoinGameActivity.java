@@ -29,6 +29,7 @@ import net.named_data.jndn.security.policy.NoVerifyPolicyManager;
 import net.named_data.jndn.util.Blob;
 
 import java.util.ArrayList;
+import com.example.cs217b.ndn_hangman.GameSync.RosterPlayer;
 
 public class JoinGameActivity extends ActionBarActivity {
     private Context context;
@@ -159,6 +160,7 @@ public class JoinGameActivity extends ActionBarActivity {
                             e.printStackTrace();
                         }
                     }
+                    face.shutdown();
                 }
             });
             faceThread.start();
@@ -200,10 +202,10 @@ public class JoinGameActivity extends ActionBarActivity {
         @Override
         protected void onProgressUpdate(String... message) {
             if (!start) {
-                ArrayList<String> roster = gs.roster_;
+                ArrayList<RosterPlayer> roster = gs.roster_;
                 StringBuilder sb = new StringBuilder("");
                 for (int i = 0; i < roster.size(); i++) {
-                    String playerName = roster.get(i);
+                    String playerName = roster.get(i).playerName;
                     sb.append(playerName);
                     sb.append("\n");
                 }
