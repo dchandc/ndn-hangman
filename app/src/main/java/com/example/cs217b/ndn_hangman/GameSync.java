@@ -71,18 +71,6 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         }
     }
 
-    public class RosterPlayer {
-        String playerName;
-        long sessionNo;
-        String randomString;
-
-        public RosterPlayer(String playerName, long sessionNo, String randomString) {
-            this.playerName = playerName;
-            this.sessionNo = sessionNo;
-            this.randomString = randomString;
-        }
-    }
-
     // initial: push the JOIN message in to the messageCache_, update roster and
     // start the heartbeat.
     // (Do not call this. It is only public to implement the interface.)
@@ -102,7 +90,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             return;
         }
 
-        roster_.add(new RosterPlayer(playerName_, sessionNo_, randomString_));
+        roster_.add(new RosterPlayer(playerName_, sessionNo_, randomString_, true));
         try {
             sendJoinMessage();
         } catch (Exception e) {
@@ -126,12 +114,15 @@ public class GameSync implements ChronoSync2013.OnInitialized,
 
         String name = content.getName();
         String prefix = data.getName().getPrefix(-2).toUri();
+        String randomString = data.getName().get(-3).toEscapedString();
         long sessionNo = Long.parseLong(data.getName().get(-2).toEscapedString());
         long sequenceNo = Long.parseLong(data.getName().get(-1).toEscapedString());
+        Messages.MessageType type = content.getType();
+        String word = content.getWord();
 
         Log.i("gamesync", "[onData] name=" + name + " prefix=" + prefix +
                 " sessionNo=" + sessionNo + " sequenceNo=" +sequenceNo +
-                " (" + content.getType() + ")");
+                " (" + type + ")");
 
         // Update roster
         int i;
@@ -139,7 +130,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             RosterPlayer rp = roster_.get(i);
             String tempName = rp.playerName;
             long tempSessionNo = rp.sessionNo;
-            if (!name.equals(tempName) && !content.getType().equals(Messages.MessageType.LEAVE))
+            if (!name.equals(tempName) && !type.equals(Messages.MessageType.LEAVE))
                 continue;
             else {
                 if (name.equals(tempName) && sessionNo > tempSessionNo)
@@ -148,31 +139,26 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             }
         }
 
-        if (i == roster_.size() && content.getType().equals(Messages.MessageType.JOIN)) {
-            String randomString = content.getWord();
-            roster_.add(new RosterPlayer(name, sessionNo, randomString));
+        if (i == roster_.size() && type.equals(Messages.MessageType.JOIN)) {
+            roster_.add(new RosterPlayer(name, sessionNo, randomString, false));
             Log.i("gamesync", "[onData] added player=(" + name + ", " + sessionNo + ", " +
                     randomString + ")");
         }
 
-        /*
-        if (content.getType().equals(Messages.MessageType.EVAL) && !content.getName().equals(playerName_) &&
-                !isHost) {
-            gameState = content.getWord();
-            lastGuesser = content.getName();
+        if (type.equals(Messages.MessageType.EVAL) && !name.equals(playerName_)) {
+            gameState = word;
+            lastGuesser = name;
             Log.i("Received Eval", gameState);
-            changedState = true; //or call static method in game activity to signal new game state
-        }
-        else if (content.getType().equals(Messages.MessageType.GUESS) && !content.getName().equals(playerName_) &&
-                isHost) {
-            lastGuess = content.getWord();
-            lastGuesser = content.getName();
+            changedState = true;
+        } else if (type.equals(Messages.MessageType.GUESS) && !name.equals(playerName_)) {
+            lastGuess = word;
+            lastGuesser = name;
             Log.i("Guesser", lastGuesser);
             Log.i("Received Guess", lastGuess);
             guessReceived = true; //or call static method in game activity to signal guess received
         }
-        */
-        if (content.getType().equals(Messages.MessageType.LEAVE)) {
+
+        if (type.equals(Messages.MessageType.LEAVE)) {
             for (i = 0; i < roster_.size(); i++) {
                 RosterPlayer rp = roster_.get(i);
                 if (rp.sessionNo == sessionNo && rp.playerName.equals(name)) {
@@ -213,8 +199,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             CachedMessage message = messageCache_.get(i);
             if (message.getSequenceNo() == sequenceNo) {
                 if (message.getMessageType().equals(Messages.MessageType.GUESS)||
-                        message.getMessageType().equals(Messages.MessageType.EVAL) ||
-                        message.getMessageType().equals(Messages.MessageType.JOIN)) {
+                        message.getMessageType().equals(Messages.MessageType.EVAL)) {
                     builder.setName(playerName_);
                     builder.setType(message.getMessageType());
                     builder.setWord(message.getMessage());
@@ -435,7 +420,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     sendJoinMessage() throws IOException, SecurityException
     {
         sync_.publishNextSequenceNo();
-        messageCacheAppend(Messages.MessageType.JOIN, randomString_);
+        messageCacheAppend(Messages.MessageType.JOIN, "xxx");
         Log.i("gamesync", "[sendJoinMessage]");
     }
 

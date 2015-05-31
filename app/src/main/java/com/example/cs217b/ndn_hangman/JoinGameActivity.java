@@ -29,7 +29,10 @@ import net.named_data.jndn.security.policy.NoVerifyPolicyManager;
 import net.named_data.jndn.util.Blob;
 
 import java.util.ArrayList;
-import com.example.cs217b.ndn_hangman.GameSync.RosterPlayer;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class JoinGameActivity extends ActionBarActivity {
     private Context context;
@@ -173,12 +176,73 @@ public class JoinGameActivity extends ActionBarActivity {
                     publishProgress();
                     pause(2000);
                     start = true;
-                    publishProgress();
+                    publishProgress("Initializing game...");
                     break;
                 }
             }
 
             // Begin game logic
+            firstDrawerIndex = 0;
+            currentDrawerIndex = firstDrawerIndex;
+            currentGuesserIndex = firstDrawerIndex;
+
+            Collections.sort(gs.roster_, new Comparator<RosterPlayer>() {
+                @Override
+                public int compare(RosterPlayer lhs, RosterPlayer rhs) {
+                    return lhs.randomString.compareTo(rhs.randomString);
+                }
+            });
+
+            do {
+                // Begin new round
+                pause(1000);
+                String availableLetters = allAvailableLetters;
+                numberGuessedWrong = 0;
+                hangmanBuilder = new StringBuilder("");
+                remainingString = "";
+
+                RosterPlayer drawer = gs.roster_.get(currentDrawerIndex);
+                publishProgress(drawer.playerName + "'s turn to choose a word.");
+
+                if (drawer.isLocal) {
+                    waitForInput = UserInputType.WORD;
+                    publishProgress();
+                    try {
+                        synchronized (lock) {
+                            lock.wait();
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    while (gs.changedState == false) {
+                        pause(500);
+                    }
+                    gs.changedState = false;
+                    drawer.inputWord = gs.gameState;
+                }
+                String chosenWord = drawer.chooseWord();
+                if (drawer.isLocal) {
+                    try {
+                        gs.sendEvalMessage(chosenWord);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                String remainingWord = chosenWord;
+                char[] tmpArray = new char[chosenWord.length()];
+                Arrays.fill(tmpArray, '_');
+                hangmanBuilder = new StringBuilder(new String(tmpArray));
+                remainingString = allLettersSpaces;
+                Log.i("game", drawer.playerName + " chose the word '" + chosenWord + "'");
+                publishProgress(drawer.playerName + " chose a " + chosenWord.length() + "-letter word.");
+
+                pause(20000);
+
+                currentDrawerIndex = (currentDrawerIndex + 1) % gs.roster_.size();
+
+            } while (currentDrawerIndex != firstDrawerIndex);
+
             try {
                 Thread.sleep(100000);
             } catch (Exception e) {
@@ -238,9 +302,9 @@ public class JoinGameActivity extends ActionBarActivity {
             }
 
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < players.size(); i++) {
-                Player player = players.get(i);
-                sb.append(player.name + ": " + player.score + "\n");
+            for (int i = 0; i < gs.roster_.size(); i++) {
+                RosterPlayer player = gs.roster_.get(i);
+                sb.append(player.playerName + ": " + player.score + "\n");
             }
 
             tv_score.setText(sb.toString());
@@ -284,7 +348,7 @@ public class JoinGameActivity extends ActionBarActivity {
                                 }
 
                                 if (valid) {
-                                    ((LocalPlayer) players.get(currentDrawerIndex)).inputWord = str;
+                                    gs.roster_.get(currentDrawerIndex).inputWord = str;
                                     btn_guess.setEnabled(false);
                                     waitForInput = UserInputType.NONE;
                                     synchronized (lock) {
@@ -333,7 +397,7 @@ public class JoinGameActivity extends ActionBarActivity {
                                 }
 
                                 if (valid) {
-                                    ((LocalPlayer) players.get(currentGuesserIndex)).inputLetter =
+                                    gs.roster_.get(currentGuesserIndex).inputLetter =
                                             str.charAt(0);
                                     btn_guess.setEnabled(false);
                                     waitForInput = UserInputType.NONE;
