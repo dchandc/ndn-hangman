@@ -98,7 +98,7 @@ public class NewGameActivity extends ActionBarActivity {
 
             this.lock = lock;
 
-            players = new ArrayList<Player>();
+            players = new ArrayList<>();
             players.add(new LocalPlayer("LocalPlayer"));
             for (int i = 0; i < numberOfPlayers - 1; i++) {
                 players.add(new AIPlayer("AIPlayer" + i));
@@ -123,7 +123,7 @@ public class NewGameActivity extends ActionBarActivity {
                 Player drawer = players.get(currentDrawerIndex);
                 publishProgress(drawer.name + "'s turn to choose a word.");
 
-                String chosenWord = drawer.chooseWord();
+                String chosenWord = drawer.inputWord();
                 String remainingWord = chosenWord;
                 char[] tmpArray = new char[chosenWord.length()];
                 Arrays.fill(tmpArray, '_');
@@ -141,7 +141,7 @@ public class NewGameActivity extends ActionBarActivity {
                     pause(500);
                     publishProgress(guesser.name + "'s turn to guess.");
 
-                    char guess = guesser.chooseLetter(availableLetters);
+                    char guess = guesser.inputLetter(availableLetters);
                     String guessString = (new Character(guess)).toString();
 
                     availableLetters = availableLetters.replace(guessString, "");
@@ -388,7 +388,7 @@ public class NewGameActivity extends ActionBarActivity {
             }
 
             @Override
-            public String chooseWord() {
+            public String inputWord() {
                 waitForInput = UserInputType.WORD;
                 publishProgress();
                 try {
@@ -403,7 +403,7 @@ public class NewGameActivity extends ActionBarActivity {
             }
 
             @Override
-            public char chooseLetter(String letters) {
+            public char inputLetter(String letters) {
                 waitForInput = UserInputType.LETTER;
                 publishProgress();
                 try {

@@ -92,7 +92,8 @@ public class JoinGameActivity extends ActionBarActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        joinTask.cancel(true);
+        if (joinTask != null)
+            joinTask.cancel(true);
     }
 
     public class JoinTask extends AsyncTask<Void, String, String> {
@@ -202,35 +203,38 @@ public class JoinGameActivity extends ActionBarActivity {
 
                 Player drawer = gs.roster_.get(currentDrawerIndex);
                 publishProgress(drawer.name + "'s turn to choose a word.");
-
                 drawer.setTurn(true);
                 if (drawer.isLocal) {
                     waitForInput = UserInputType.WORD;
-                }
-                while (drawer.isThinking()) {
-                    pause(250);
-                }
-                String chosenWord = drawer.chooseWord();
-                if (drawer.isLocal) {
+                    publishProgress();
+                    while (drawer.isThinking() && !isCancelled()) {
+                        pause(250);
+                    }
+                    String chosenWord = drawer.inputWord();
+                    char[] tmpArray = new char[chosenWord.length()];
+                    Arrays.fill(tmpArray, '_');
+                    String underscoredWord = new String(tmpArray);
+                    hangmanBuilder = new StringBuilder(underscoredWord);
                     try {
-                        gs.sendEvalMessage(chosenWord);
+                        gs.sendEvalMessage(hangmanBuilder.toString());
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
+                } else {
+                    while (drawer.isThinking()) {
+                        pause(250);
+                    }
+                    String underscoredWord = drawer.inputWord();
+                    hangmanBuilder = new StringBuilder(underscoredWord);
                 }
-                String remainingWord = chosenWord;
-                char[] tmpArray = new char[chosenWord.length()];
-                Arrays.fill(tmpArray, '_');
-                hangmanBuilder = new StringBuilder(new String(tmpArray));
-                remainingString = allLettersSpaces;
-                Log.i("game", drawer.name + " chose the word '" + chosenWord + "'");
-                publishProgress(drawer.name + " chose a " + chosenWord.length() + "-letter word.");
+                publishProgress(drawer.name + " chose a " + hangmanBuilder.length() +
+                        "-letter word.");
 
                 pause(20000);
 
                 currentDrawerIndex = (currentDrawerIndex + 1) % gs.roster_.size();
 
-            } while (currentDrawerIndex != firstDrawerIndex);
+            } while (currentDrawerIndex != firstDrawerIndex && !isCancelled());
 
             try {
                 Thread.sleep(100000);
@@ -255,16 +259,16 @@ public class JoinGameActivity extends ActionBarActivity {
         @Override
         protected void onProgressUpdate(String... message) {
             if (!start) {
-                ArrayList<Player> roster = gs.roster_;
                 StringBuilder sb = new StringBuilder("");
-                for (int i = 0; i < roster.size(); i++) {
-                    String playerName = roster.get(i).name;
+                for (int i = 0; i < gs.roster_.size(); i++) {
+                    String playerName = gs.roster_.get(i).name;
                     sb.append(playerName);
                     sb.append("\n");
                 }
                 tv_roster.setText(sb.toString());
                 return;
             }
+
             if (!switched) {
                 setContentView(R.layout.activity_newgame);
 
@@ -308,6 +312,7 @@ public class JoinGameActivity extends ActionBarActivity {
             tv_remain.setText(remainingString);
 
             if (waitForInput == UserInputType.WORD) {
+                Log.i("join", "Guess button enabled");
                 btn_guess.setEnabled(true);
                 btn_guess.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -340,11 +345,6 @@ public class JoinGameActivity extends ActionBarActivity {
                                     gs.roster_.get(currentDrawerIndex).think(str);
                                     btn_guess.setEnabled(false);
                                     waitForInput = UserInputType.NONE;
-                                    /*
-                                    synchronized (lock) {
-                                        lock.notify();
-                                    }
-                                    */
                                 } else {
                                     Toast.makeText(context, "Invalid input",
                                             Toast.LENGTH_SHORT).show();
@@ -391,11 +391,6 @@ public class JoinGameActivity extends ActionBarActivity {
                                     gs.roster_.get(currentGuesserIndex).think(str.charAt(0));
                                     btn_guess.setEnabled(false);
                                     waitForInput = UserInputType.NONE;
-                                    /*
-                                    synchronized (lock) {
-                                        lock.notify();
-                                    }
-                                    */
                                 } else {
                                     Toast.makeText(context, "Invalid input",
                                             Toast.LENGTH_SHORT).show();

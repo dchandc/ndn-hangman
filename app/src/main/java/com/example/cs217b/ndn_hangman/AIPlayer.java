@@ -25,7 +25,7 @@ public class AIPlayer extends Player {
     }
 
     @Override
-    public String chooseWord() {
+    public String inputWord() {
         if (startTime != 0 && System.currentTimeMillis() - startTime >= thinkTime) {
             startTime = 0;
             return words[rand.nextInt(words.length)];
@@ -35,7 +35,7 @@ public class AIPlayer extends Player {
     }
 
     @Override
-    public char chooseLetter(String letters) {
+    public char inputLetter(String letters) {
         if (startTime != 0 && System.currentTimeMillis() - startTime >= thinkTime) {
             startTime = 0;
             int index = rand.nextInt(letters.length());

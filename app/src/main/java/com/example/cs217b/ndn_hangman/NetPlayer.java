@@ -1,8 +1,8 @@
 package com.example.cs217b.ndn_hangman;
 
 public class NetPlayer extends Player{
-    String inputWord;
-    char inputLetter;
+    String storedWord;
+    char storedLetter;
     boolean isThinking;
 
     public NetPlayer(String name, long sessionNo, String sid, boolean isLocal) {
@@ -12,16 +12,16 @@ public class NetPlayer extends Player{
         this.sid = sid;
         this.sessionNo = sessionNo;
 
-        inputWord = "";
-        inputLetter = '\0';
+        storedWord = "";
+        storedLetter = '\0';
         isThinking = false;
     }
 
     @Override
-    public String chooseWord() {
+    public String inputWord() {
         if (!isThinking) {
-            String temp = inputWord;
-            inputWord = "";
+            String temp = storedWord;
+            storedWord = "";
             return temp;
         }
 
@@ -29,10 +29,10 @@ public class NetPlayer extends Player{
     }
 
     @Override
-    public char chooseLetter(String ignored) {
+    public char inputLetter(String ignored) {
         if (!isThinking) {
-            char temp = inputLetter;
-            inputLetter = '\0';
+            char temp = storedLetter;
+            storedLetter = '\0';
             return temp;
         }
 
@@ -51,13 +51,13 @@ public class NetPlayer extends Player{
 
     @Override
     public void think(String word) {
-        inputWord = word;
+        storedWord = word;
         isThinking = false;
     }
 
     @Override
     public void think(char letter) {
-        inputLetter = letter;
+        storedLetter = letter;
         isThinking = false;
     }
 }

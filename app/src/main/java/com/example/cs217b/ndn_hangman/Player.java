@@ -6,8 +6,8 @@ public abstract class Player {
     public long sessionNo;
     public String sid;
     public boolean isLocal;
-    public abstract String chooseWord();
-    public abstract char chooseLetter(String letters);
+    public abstract String inputWord();
+    public abstract char inputLetter(String letters);
     public abstract void setTurn(boolean turnState);
     public abstract boolean isThinking();
     public abstract void think(String word);
