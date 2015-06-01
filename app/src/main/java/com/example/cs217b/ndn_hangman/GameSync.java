@@ -146,11 +146,15 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         }
 
         if (type.equals(Messages.MessageType.EVAL) && !sid.equals(sid_)) {
-            player.think(word);
-            Log.i("gamesync", "[onData] drawer think");
+            if (player.isThinking()) {
+                player.think(word);
+                Log.i("gamesync", "[onData] drawer think");
+            }
         } else if (type.equals(Messages.MessageType.GUESS) && !sid.equals(sid_)) {
-            player.think(word.charAt(0));
-            Log.i("gamesync", "[onData] guesser think");
+            if (player.isThinking()) {
+                player.think(word.charAt(0));
+                Log.i("gamesync", "[onData] guesser think");
+            }
         } else if (type.equals(Messages.MessageType.LEAVE)) {
             for (i = 0; i < roster_.size(); i++) {
                 player = roster_.get(i);

@@ -112,8 +112,8 @@ public class JoinGameActivity extends ActionBarActivity {
         private final String allAvailableLetters = "abcdefghijklmnopqrstuvwxyz";
         private final String allLettersSpaces =
                 "a b c d e f g h i j k l m n o p q r s t u v w x y z ";
-        private final int guesserBonus = 100;
-        private final int drawerBonus = 100;
+        private final int guesserBonus = 200;
+        private final int drawerBonus = 400;
         private int firstDrawerIndex;
         private int currentDrawerIndex;
         private int currentGuesserIndex;
@@ -196,7 +196,7 @@ public class JoinGameActivity extends ActionBarActivity {
             do {
                 // Begin new round
                 pause(1000);
-                String availableLetters = allAvailableLetters;
+                String chosenWord;
                 numberGuessedWrong = 0;
                 hangmanBuilder = new StringBuilder("");
                 remainingString = "";
@@ -210,7 +210,7 @@ public class JoinGameActivity extends ActionBarActivity {
                     while (drawer.isThinking() && !isCancelled()) {
                         pause(250);
                     }
-                    String chosenWord = drawer.inputWord();
+                    chosenWord = drawer.inputWord();
                     char[] tmpArray = new char[chosenWord.length()];
                     Arrays.fill(tmpArray, '_');
                     String underscoredWord = new String(tmpArray);
@@ -221,16 +221,108 @@ public class JoinGameActivity extends ActionBarActivity {
                         e.printStackTrace();
                     }
                 } else {
-                    while (drawer.isThinking()) {
+                    while (drawer.isThinking() && !isCancelled()) {
                         pause(250);
                     }
-                    String underscoredWord = drawer.inputWord();
-                    hangmanBuilder = new StringBuilder(underscoredWord);
+                    chosenWord = drawer.inputWord();
+                    hangmanBuilder = new StringBuilder(chosenWord);
                 }
+                remainingString = allLettersSpaces;
                 publishProgress(drawer.name + " chose a " + hangmanBuilder.length() +
                         "-letter word.");
 
-                pause(20000);
+                while (numberGuessedWrong < numberOfChances && !isCancelled()) {
+                    int count = 0;
+                    String guessString;
+                    char guess;
+
+                    currentGuesserIndex = (currentGuesserIndex + 1) % gs.roster_.size();
+                    if (currentGuesserIndex == currentDrawerIndex)
+                        continue;
+
+                    Player guesser = gs.roster_.get(currentGuesserIndex);
+                    pause(500);
+                    publishProgress(guesser.name + "'s turn to guess.");
+                    guesser.setTurn(true);
+                    if (guesser.isLocal) {
+                        waitForInput = UserInputType.LETTER;
+                        publishProgress();
+                        while (guesser.isThinking() && !isCancelled()) {
+                            pause(250);
+                        }
+                        guess = guesser.inputLetter(null);
+                        guessString = (new Character(guess)).toString();
+                        try {
+                            gs.sendGuessMessage(guessString);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        while (guesser.isThinking() && !isCancelled()) {
+                            pause(250);
+                        }
+                        guess = guesser.inputLetter(null);
+                        guessString = (new Character(guess)).toString();
+                    }
+                    remainingString = remainingString.replace(guessString + " ", "");
+
+                    drawer.setTurn(true);
+                    if (drawer.isLocal) {
+                        String prevWord = hangmanBuilder.toString();
+                        int fromIndex = 0;
+                        int replaceIndex = chosenWord.indexOf(guess, fromIndex);
+                        while (replaceIndex != -1) {
+                            hangmanBuilder.setCharAt(replaceIndex, guess);
+                            fromIndex = replaceIndex + 1;
+                            replaceIndex = chosenWord.indexOf(guess, fromIndex);
+                        }
+                        String currWord = hangmanBuilder.toString();
+                        count = prevWord.replace("_", "").length() -
+                                currWord.replace("_", "").length();
+                        try {
+                            gs.sendEvalMessage(hangmanBuilder.toString());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        while (drawer.isThinking() && !isCancelled()) {
+                            pause(250);
+                        }
+                        String currWord = drawer.inputWord();
+                        String prevWord = hangmanBuilder.toString();
+                        count = prevWord.replace("_", "").length() -
+                                currWord.replace("_", "").length();
+                        hangmanBuilder = new StringBuilder(currWord);
+                    }
+
+                    int points = count * 100;
+                    guesser.score += points;
+
+                    if (count == 0) {
+                        numberGuessedWrong++;
+                        publishProgress(guesser.name + " incorrectly guessed the letter '" +
+                                guessString + "'.");
+
+                        if (numberGuessedWrong >= numberOfChances) {
+                            drawer.score += drawerBonus;
+                            Log.i("game", "Drawer (+" + drawerBonus + "): " + drawer.score);
+                            publishProgress(drawer.name + " scored " + drawerBonus + " points " +
+                                    "for completing Hangman!");
+                            break;
+                        }
+                    } else {
+                        publishProgress(guesser.name + " correctly guessed the letter '" +
+                                guessString + "' and scored " + points + " points.");
+                    }
+
+                    if (hangmanBuilder.toString().indexOf('_') == -1) {
+                        guesser.score += guesserBonus;
+                        publishProgress(guesser.name + " completed the word and scored " +
+                                guesserBonus + " points!");
+                    }
+                }
+
+                pause(1000);
 
                 currentDrawerIndex = (currentDrawerIndex + 1) % gs.roster_.size();
 
