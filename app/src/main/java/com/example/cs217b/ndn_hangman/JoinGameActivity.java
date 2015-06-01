@@ -108,7 +108,6 @@ public class JoinGameActivity extends ActionBarActivity {
         private boolean switched = false;
         private final int playersPerGame = 2;
 
-        private ArrayList<Player> players = new ArrayList<>();
         private final String allAvailableLetters = "abcdefghijklmnopqrstuvwxyz";
         private final String allLettersSpaces =
                 "a b c d e f g h i j k l m n o p q r s t u v w x y z ";
@@ -186,10 +185,10 @@ public class JoinGameActivity extends ActionBarActivity {
             currentDrawerIndex = firstDrawerIndex;
             currentGuesserIndex = firstDrawerIndex;
 
-            Collections.sort(gs.roster_, new Comparator<RosterPlayer>() {
+            Collections.sort(gs.roster_, new Comparator<Player>() {
                 @Override
-                public int compare(RosterPlayer lhs, RosterPlayer rhs) {
-                    return lhs.randomString.compareTo(rhs.randomString);
+                public int compare(Player lhs, Player rhs) {
+                    return lhs.sid.compareTo(rhs.sid);
                 }
             });
 
@@ -201,25 +200,15 @@ public class JoinGameActivity extends ActionBarActivity {
                 hangmanBuilder = new StringBuilder("");
                 remainingString = "";
 
-                RosterPlayer drawer = gs.roster_.get(currentDrawerIndex);
-                publishProgress(drawer.playerName + "'s turn to choose a word.");
+                Player drawer = gs.roster_.get(currentDrawerIndex);
+                publishProgress(drawer.name + "'s turn to choose a word.");
 
+                drawer.setTurn(true);
                 if (drawer.isLocal) {
                     waitForInput = UserInputType.WORD;
-                    publishProgress();
-                    try {
-                        synchronized (lock) {
-                            lock.wait();
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    while (gs.changedState == false) {
-                        pause(500);
-                    }
-                    gs.changedState = false;
-                    drawer.inputWord = gs.gameState;
+                }
+                while (drawer.isThinking()) {
+                    pause(250);
                 }
                 String chosenWord = drawer.chooseWord();
                 if (drawer.isLocal) {
@@ -234,8 +223,8 @@ public class JoinGameActivity extends ActionBarActivity {
                 Arrays.fill(tmpArray, '_');
                 hangmanBuilder = new StringBuilder(new String(tmpArray));
                 remainingString = allLettersSpaces;
-                Log.i("game", drawer.playerName + " chose the word '" + chosenWord + "'");
-                publishProgress(drawer.playerName + " chose a " + chosenWord.length() + "-letter word.");
+                Log.i("game", drawer.name + " chose the word '" + chosenWord + "'");
+                publishProgress(drawer.name + " chose a " + chosenWord.length() + "-letter word.");
 
                 pause(20000);
 
@@ -266,10 +255,10 @@ public class JoinGameActivity extends ActionBarActivity {
         @Override
         protected void onProgressUpdate(String... message) {
             if (!start) {
-                ArrayList<RosterPlayer> roster = gs.roster_;
+                ArrayList<Player> roster = gs.roster_;
                 StringBuilder sb = new StringBuilder("");
                 for (int i = 0; i < roster.size(); i++) {
-                    String playerName = roster.get(i).playerName;
+                    String playerName = roster.get(i).name;
                     sb.append(playerName);
                     sb.append("\n");
                 }
@@ -303,8 +292,8 @@ public class JoinGameActivity extends ActionBarActivity {
 
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < gs.roster_.size(); i++) {
-                RosterPlayer player = gs.roster_.get(i);
-                sb.append(player.playerName + ": " + player.score + "\n");
+                Player player = gs.roster_.get(i);
+                sb.append(player.name + ": " + player.score + "\n");
             }
 
             tv_score.setText(sb.toString());
@@ -348,12 +337,14 @@ public class JoinGameActivity extends ActionBarActivity {
                                 }
 
                                 if (valid) {
-                                    gs.roster_.get(currentDrawerIndex).inputWord = str;
+                                    gs.roster_.get(currentDrawerIndex).think(str);
                                     btn_guess.setEnabled(false);
                                     waitForInput = UserInputType.NONE;
+                                    /*
                                     synchronized (lock) {
                                         lock.notify();
                                     }
+                                    */
                                 } else {
                                     Toast.makeText(context, "Invalid input",
                                             Toast.LENGTH_SHORT).show();
@@ -397,13 +388,14 @@ public class JoinGameActivity extends ActionBarActivity {
                                 }
 
                                 if (valid) {
-                                    gs.roster_.get(currentGuesserIndex).inputLetter =
-                                            str.charAt(0);
+                                    gs.roster_.get(currentGuesserIndex).think(str.charAt(0));
                                     btn_guess.setEnabled(false);
                                     waitForInput = UserInputType.NONE;
+                                    /*
                                     synchronized (lock) {
                                         lock.notify();
                                     }
+                                    */
                                 } else {
                                     Toast.makeText(context, "Invalid input",
                                             Toast.LENGTH_SHORT).show();
@@ -428,45 +420,6 @@ public class JoinGameActivity extends ActionBarActivity {
                 Thread.sleep(ms);
             } catch (InterruptedException e) {
                 e.printStackTrace();
-            }
-        }
-
-        private class LocalPlayer extends Player {
-            String inputWord;
-            char inputLetter;
-
-            public LocalPlayer(String name) {
-                this.name = name;
-            }
-
-            @Override
-            String chooseWord() {
-                waitForInput = UserInputType.WORD;
-                publishProgress();
-                try {
-                    synchronized (lock) {
-                        lock.wait();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                return inputWord;
-            }
-
-            @Override
-            char chooseLetter(String letters) {
-                waitForInput = UserInputType.LETTER;
-                publishProgress();
-                try {
-                    synchronized (lock) {
-                        lock.wait();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                return inputLetter;
             }
         }
     }

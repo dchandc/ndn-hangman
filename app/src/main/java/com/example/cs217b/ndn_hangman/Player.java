@@ -1,11 +1,15 @@
 package com.example.cs217b.ndn_hangman;
 
-/**
- * Created by Dennis on 5/2/2015.
- */
 public abstract class Player {
-    public int score;
     public String name;
-    abstract String chooseWord();
-    abstract char chooseLetter(String letters);
+    public int score;
+    public long sessionNo;
+    public String sid;
+    public boolean isLocal;
+    public abstract String chooseWord();
+    public abstract char chooseLetter(String letters);
+    public abstract void setTurn(boolean turnState);
+    public abstract boolean isThinking();
+    public abstract void think(String word);
+    public abstract void think(char letter);
 }

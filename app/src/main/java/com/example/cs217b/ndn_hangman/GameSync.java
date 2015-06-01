@@ -27,7 +27,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     public String playerName_;
     public long sessionNo_;
     public String gameName_;
-    public ArrayList<RosterPlayer> roster_ = new ArrayList<>();
+    public ArrayList<Player> roster_ = new ArrayList<>();
     public Face face_;
     public KeyChain keyChain_;
     public Name certificateName_;
@@ -40,7 +40,8 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     private final double syncLifetime_ = 5000.0; // milliseconds
     private boolean isRecoverySyncState_ = true;
 
-    public GameSync(String playerName, String gameName, Name hubPrefix, Face face, KeyChain keyChain, Name certificateName) {
+    public GameSync(String playerName, String gameName, Name hubPrefix, Face face,
+                    KeyChain keyChain, Name certificateName) {
         playerName_ = playerName;
         gameName_ = gameName;
         face_ = face;
@@ -48,15 +49,12 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         certificateName_ = certificateName;
         heartbeat_ = this.new Heartbeat();
         randomString_ = getRandomString();
-
-        // This should only be called once, so get the random string here.
         gamePrefix_ = new Name(hubPrefix).append(gameName_).append(randomString_);
-        long sessionNo_ = Math.round(getNowMilliseconds() / 1000.0);
+        sessionNo_ = Math.round(getNowMilliseconds() / 1000.0);
         try {
-            sync_ = new ChronoSync2013
-                    (this, this, gamePrefix_,
+            sync_ = new ChronoSync2013(this, this, gamePrefix_,
                             new Name("/ndn/edu/ucla/hangman/broadcast").append(gameName_),
-                            sessionNo_, face, keyChain, certificateName, syncLifetime_,
+                            sessionNo_, face_, keyChain_, certificateName_, syncLifetime_,
                             RegisterFailed.onRegisterFailed_);
             Log.i("gamesync", "[GameSync] ChronoSync object created");
         } catch (Exception ex) {
@@ -90,7 +88,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             return;
         }
 
-        roster_.add(new RosterPlayer(playerName_, sessionNo_, randomString_, true));
+        roster_.add(new NetPlayer(playerName_, sessionNo_, randomString_, true));
         try {
             sendJoinMessage();
         } catch (Exception e) {
@@ -127,8 +125,8 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         // Update roster
         int i;
         for (i = 0; i < roster_.size(); i++) {
-            RosterPlayer rp = roster_.get(i);
-            String tempName = rp.playerName;
+            Player rp = roster_.get(i);
+            String tempName = rp.name;
             long tempSessionNo = rp.sessionNo;
             if (!name.equals(tempName) && !type.equals(Messages.MessageType.LEAVE))
                 continue;
@@ -140,7 +138,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         }
 
         if (i == roster_.size() && type.equals(Messages.MessageType.JOIN)) {
-            roster_.add(new RosterPlayer(name, sessionNo, randomString, false));
+            roster_.add(new NetPlayer(name, sessionNo, randomString, false));
             Log.i("gamesync", "[onData] added player=(" + name + ", " + sessionNo + ", " +
                     randomString + ")");
         }
@@ -156,15 +154,13 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             Log.i("Guesser", lastGuesser);
             Log.i("Received Guess", lastGuess);
             guessReceived = true; //or call static method in game activity to signal guess received
-        }
-
-        if (type.equals(Messages.MessageType.LEAVE)) {
+        } else if (type.equals(Messages.MessageType.LEAVE)) {
             for (i = 0; i < roster_.size(); i++) {
-                RosterPlayer rp = roster_.get(i);
-                if (rp.sessionNo == sessionNo && rp.playerName.equals(name)) {
+                Player rp = roster_.get(i);
+                if (rp.sessionNo == sessionNo && rp.name.equals(name)) {
                     roster_.remove(i);
-                    Log.i("gamesync", "[onData] removed player=(" + rp.playerName + ", " +
-                            rp.sessionNo + ", " + rp.randomString + ")");
+                    Log.i("gamesync", "[onData] removed player=(" + rp.name + ", " +
+                            rp.sessionNo + ", " + rp.sid + ")");
                     break;
                 }
             }
@@ -352,11 +348,11 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                 return;
 
             for (int i = 0; i < roster_.size(); i++) {
-                RosterPlayer rp = roster_.get(i);
-                if (rp.sessionNo == sessionNo_ && rp.playerName.equals(name_)) {
+                Player rp = roster_.get(i);
+                if (rp.sessionNo == sessionNo_ && rp.name.equals(name_)) {
                     roster_.remove(i);
-                    Log.i("gamesync", "[Alive] removed player=(" + rp.playerName + ", " +
-                            rp.sessionNo + ", " + rp.randomString + ")");
+                    Log.i("gamesync", "[Alive] removed player=(" + rp.name + ", " +
+                            rp.sessionNo + ", " + rp.sid + ")");
                     break;
                 }
             }

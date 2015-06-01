@@ -388,7 +388,7 @@ public class NewGameActivity extends ActionBarActivity {
             }
 
             @Override
-            String chooseWord() {
+            public String chooseWord() {
                 waitForInput = UserInputType.WORD;
                 publishProgress();
                 try {
@@ -403,7 +403,7 @@ public class NewGameActivity extends ActionBarActivity {
             }
 
             @Override
-            char chooseLetter(String letters) {
+            public char chooseLetter(String letters) {
                 waitForInput = UserInputType.LETTER;
                 publishProgress();
                 try {
@@ -415,6 +415,26 @@ public class NewGameActivity extends ActionBarActivity {
                 }
 
                 return inputLetter;
+            }
+
+            @Override
+            public void setTurn(boolean turnState) {
+
+            }
+
+            @Override
+            public boolean isThinking() {
+                return false;
+            }
+
+            @Override
+            public void think(String word) {
+
+            }
+
+            @Override
+            public void think(char letter) {
+
             }
         }
     }
