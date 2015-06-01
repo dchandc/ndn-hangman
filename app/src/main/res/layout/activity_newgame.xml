@@ -62,7 +62,8 @@
                     android:id="@+id/text_score"
                     android:singleLine="false"
                     android:layout_weight="0.8"
-                    android:background="#ffffff" />
+                    android:background="#ffffff"
+                    android:textColor="#000000" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -112,7 +113,9 @@
                     android:id="@+id/button_guess"
                     android:layout_centerVertical="true"
                     android:layout_centerHorizontal="true"
-                    android:enabled="false" />
+                    android:enabled="false"
+                    android:textColor="#000000"
+                    android:shadowColor="#000000" />
 
             </RelativeLayout>
 
