@@ -53,14 +53,14 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                             RegisterFailed.onRegisterFailed_);
             Log.i("gamesync", "[GameSync] ChronoSync object created");
         } catch (Exception ex) {
-            Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
 
         try {
             face.registerPrefix(gamePrefix_, this, RegisterFailed.onRegisterFailed_);
         } catch (Exception ex) {
-            Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -101,7 +101,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         try {
             content = Messages.parseFrom(data.getContent().getImmutableArray());
         } catch (Exception ex) {
-            Logger.getLogger(Chat.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
 
