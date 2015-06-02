@@ -62,7 +62,6 @@ public class CreateGame extends ActionBarActivity {
                 face.setCommandSigningInfo(keyChain, certificateName);
 
                 sync_ = new GameSync(playerName_,gameName_,hubPrefix,face,keyChain,certificateName);
-                sync_.isHost = true;
                 Intent intent = new Intent(CreateGame.this, NewGameActivity.class);
                 startActivity(intent);
             }

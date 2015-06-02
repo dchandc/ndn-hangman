@@ -18,12 +18,7 @@ import java.util.Random;
 
 public class GameSync implements ChronoSync2013.OnInitialized,
         ChronoSync2013.OnReceivedSyncState, OnData, OnInterestCallback {
-    public boolean changedState;
-    public boolean guessReceived;
-    public boolean isHost = false;
-    public String lastGuesser;
-    public String gameState;
-    public String lastGuess;
+    private final double syncLifetime_ = 5000.0; // milliseconds
     public String playerName_;
     public long sessionNo_;
     public String gameName_;
@@ -37,8 +32,8 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     private OnTimeout heartbeat_;
     public ArrayList<CachedMessage> messageCache_ = new ArrayList<>();
     public ChronoSync2013 sync_;
-    private final double syncLifetime_ = 5000.0; // milliseconds
-    private boolean isRecoverySyncState_ = true;
+    public int roundNum_ = 0;
+    public int guessNum_ = 0;
 
     public GameSync(String playerName, String gameName, Name hubPrefix, Face face,
                     KeyChain keyChain, Name certificateName) {
@@ -145,14 +140,23 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                     sid + ")");
         }
 
+        Log.i("gamesync", "[onData] roundNum=" + roundNum_ + " guessNum=" + guessNum_);
         if (type.equals(Messages.MessageType.EVAL) && !sid.equals(sid_)) {
-            if (player.isThinking()) {
-                player.think(word);
+            String[] parts = word.split("-");
+            int roundNum = Integer.valueOf(parts[0]);
+            int guessNum = Integer.valueOf(parts[1]);
+            String eval = parts[2];
+            if (roundNum == roundNum_ && guessNum == guessNum_ && player.isThinking()) {
+                player.think(eval);
                 Log.i("gamesync", "[onData] drawer think");
             }
         } else if (type.equals(Messages.MessageType.GUESS) && !sid.equals(sid_)) {
-            if (player.isThinking()) {
-                player.think(word.charAt(0));
+            String[] parts = word.split("-");
+            int roundNum = Integer.valueOf(parts[0]);
+            int guessNum = Integer.valueOf(parts[1]);
+            char guess = parts[2].charAt(0);
+            if (roundNum == roundNum_ && guessNum == guessNum_ && player.isThinking()) {
+                player.think(guess);
                 Log.i("gamesync", "[onData] guesser think");
             }
         } else if (type.equals(Messages.MessageType.LEAVE)) {
@@ -195,13 +199,34 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         boolean gotContent = false;
         for (int i = messageCache_.size() - 1; i >= 0; --i) {
             CachedMessage message = messageCache_.get(i);
+            Messages.MessageType type = message.getMessageType();
             if (message.getSequenceNo() == sequenceNo) {
-                if (message.getMessageType().equals(Messages.MessageType.GUESS)||
-                        message.getMessageType().equals(Messages.MessageType.EVAL)) {
+                if (type.equals(Messages.MessageType.GUESS)||
+                        type.equals(Messages.MessageType.EVAL)) {
                     builder.setName(playerName_);
                     builder.setType(message.getMessageType());
                     builder.setWord(message.getMessage());
                     builder.setTimestamp((int) Math.round(message.getTime() / 1000.0));
+                } else if (type.equals(Messages.MessageType.HELLO)){
+                    boolean gotPlay = false;
+                    for (i = i - 1; i >= 0; --i) {
+                        CachedMessage tempMessage = messageCache_.get(i);
+                        Messages.MessageType tempType = tempMessage.getMessageType();
+                        if (tempType.equals(Messages.MessageType.GUESS)||
+                                tempType.equals(Messages.MessageType.EVAL)) {
+                            builder.setName(playerName_);
+                            builder.setType(tempMessage.getMessageType());
+                            builder.setWord(tempMessage.getMessage());
+                            builder.setTimestamp((int) Math.round(tempMessage.getTime() / 1000.0));
+                            gotPlay = true;
+                        }
+                    }
+
+                    if (!gotPlay) {
+                        builder.setName(playerName_);
+                        builder.setType(message.getMessageType());
+                        builder.setTimestamp((int) Math.round(message.getTime() / 1000.0));
+                    }
                 } else {
                     builder.setName(playerName_);
                     builder.setType(message.getMessageType());
@@ -237,9 +262,6 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     @Override
     public final void
     onReceivedSyncState(List syncStates, boolean isRecovery) {
-        // This is used by onData to decide whether to display the chat messages.
-        isRecoverySyncState_ = isRecovery;
-
         Log.i("gamesync", "[onReceivedSyncState] isRecovery=" + ((isRecovery) ? "true" : "false"));
         ArrayList<String> sendList = new ArrayList<>();
         ArrayList<Long> sessionNoList = new ArrayList<>();
@@ -273,6 +295,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                     "/" + sequenceNoList.get(i);
             Interest interest = new Interest(new Name(uri));
             interest.setInterestLifetimeMilliseconds(syncLifetime_);
+            Log.i("gamesync", "[onReceivedSyncState] express interest uri=" + uri);
             try {
                 face_.expressInterest(interest, this, ChatTimeout.onTimeout_);
             } catch (IOException ex) {
@@ -422,30 +445,25 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         Log.i("gamesync", "[sendJoinMessage]");
     }
 
-    // Send a chat message.
+    // Send a guess message
     public final void
-    sendGuessMessage(String guess) throws Exception
-    {
-        if (messageCache_.size() == 0)
-            messageCacheAppend(Messages.MessageType.JOIN, "xxx");
-
-        // Ignore an empty message.
-        // forming Sync Data Packet.
-        if (!guess.equals("")) {
-            sync_.publishNextSequenceNo();
-            messageCacheAppend(Messages.MessageType.GUESS, guess);
-            Log.i("gamesync", "[sendGuessMessage] guess=" + guess);
-        }
-    }
-
-    public final void
-    sendEvalMessage(String gameState) throws  Exception
+    sendGuessMessage(String guess) throws IOException, SecurityException
     {
         sync_.publishNextSequenceNo();
-        messageCacheAppend(Messages.MessageType.EVAL, gameState);
-        Log.i("gamesync", "[sendEvalMessage] gameState=" + gameState);
+        messageCacheAppend(Messages.MessageType.GUESS, guess);
+        Log.i("gamesync", "[sendGuessMessage] guess=" + guess);
     }
 
+    // Send an eval message
+    public final void
+    sendEvalMessage(String eval) throws  IOException, SecurityException
+    {
+        sync_.publishNextSequenceNo();
+        messageCacheAppend(Messages.MessageType.EVAL, eval);
+        Log.i("gamesync", "[sendEvalMessage] eval=" + eval);
+    }
+
+    // Send a leave message
     public final void
     sendLeaveMessage() throws IOException, SecurityException
     {
@@ -457,10 +475,12 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     private void
     messageCacheAppend(MessageBuffer.Messages.MessageType messageType, String message)
     {
-        final int maxMessageCacheLength_ = 100;
-        Log.i("gamesync", "[messageCacheAppend] " + message + " (" + messageType + ")");
-        messageCache_.add(new CachedMessage(sync_.getSequenceNo(), messageType, message, getNowMilliseconds()));
-        while (messageCache_.size() > maxMessageCacheLength_)
+        final int maxMessageCacheLength = 100;
+        messageCache_.add(new CachedMessage(sync_.getSequenceNo(), messageType, message,
+                getNowMilliseconds()));
+        Log.i("gamesync", "[messageCacheAppend] " + message + " (" + messageType + ")" + "[" +
+                messageCache_.size() + "]");
+        while (messageCache_.size() > maxMessageCacheLength)
             messageCache_.remove(0);
     }
 
