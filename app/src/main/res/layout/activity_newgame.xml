@@ -109,7 +109,7 @@
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@+string/button_guess"
+                    android:text="@string/button_guess"
                     android:id="@+id/button_guess"
                     android:layout_centerVertical="true"
                     android:layout_centerHorizontal="true"
