@@ -9,20 +9,22 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="New Game"
-        android:id="@+id/button_new"
+        android:text="Play with AI"
+        android:id="@+id/button_ai"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
-        android:textColor="#000000" />
+        android:textColor="#000000"
+        android:shadowColor="#000000" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Join Game"
+        android:text="Play Online"
         android:id="@+id/button_join"
-        android:layout_below="@+id/button_new"
+        android:layout_below="@+id/button_ai"
         android:layout_centerHorizontal="true"
-        android:textColor="#000000" />
+        android:textColor="#000000"
+        android:shadowColor="#000000" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -30,21 +32,22 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:text="NDN Hangman"
         android:id="@+id/game_title"
-        android:layout_above="@+id/button_new"
+        android:layout_above="@+id/button_ai"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="50dp"
         android:textStyle="bold"
-        android:textSize="50dp"
-        android:textColor="#000000" />
+        android:textColor="#000000"
+        android:singleLine="true"
+        android:textSize="40dp" />
 
     <ImageView
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:id="@+id/imageView"
-        android:src="@drawable/hangman_6"
-        android:layout_alignTop="@+id/button_new"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignBottom="@+id/button_join"
+        android:layout_toLeftOf="@+id/button_ai"
+        android:layout_toStartOf="@+id/button_ai"
+        android:src="@drawable/hangman_6" />
 
     <TextView
         android:layout_width="wrap_content"

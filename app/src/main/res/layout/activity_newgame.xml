@@ -12,71 +12,83 @@
         android:id="@+id/linear_full_vertical">
 
         <LinearLayout
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="0.5"
             android:id="@+id/linear_half_top">
 
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="0.2"
+                android:background="#ffffff"
+                android:id="@+id/relative_header">
+
+            </RelativeLayout>
+
             <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="0.5"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="0.8"
                 android:background="#ffffff"
                 android:id="@+id/layout_image">
 
-                <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:id="@+id/image_man"
-                    android:layout_weight="0.8"
-                    android:background="#ffffff"
-                    android:src="@drawable/hangman_0" />
-
                 <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:id="@+id/text_letters"
-                    android:singleLine="false"
-                    android:layout_weight="0.2"
-                    android:background="#ffffff"
-                    android:textSize="28dp"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:textColor="#000000" />
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="0.5"
-                android:id="@+id/layout_score">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:textAppearance="?android:attr/textAppearanceLarge"
-                    android:id="@+id/text_score"
-                    android:singleLine="false"
-                    android:layout_weight="0.8"
-                    android:background="#ffffff"
-                    android:textColor="#000000" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
                     android:id="@+id/text_remain"
-                    android:layout_weight="0.2"
+                    android:layout_weight="0.3"
                     android:textSize="17dp"
                     android:gravity="center"
                     android:background="#ffffff"
                     android:textColor="#848484"
                     android:textStyle="bold"
-                    android:paddingRight="5dp" />
+                    android:paddingRight="5dp"
+                    android:paddingLeft="5dp" />
+
+                <ImageView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:id="@+id/image_man"
+                    android:layout_weight="0.3"
+                    android:background="#ffffff"
+                    android:src="@drawable/hangman_0" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:id="@+id/text_score"
+                    android:singleLine="false"
+                    android:layout_weight="0.3"
+                    android:background="#ffffff"
+                    android:textColor="#000000"
+                    android:gravity="center_vertical"
+                    android:paddingRight="5dp"
+                    android:paddingLeft="5dp" />
+
             </LinearLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="0.2"
+                android:id="@+id/relative_letters">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:id="@+id/text_letters"
+                    android:singleLine="false"
+                    android:layout_weight="0.33"
+                    android:background="#ffffff"
+                    android:textSize="28dp"
+                    android:gravity="top|center"
+                    android:textColor="#000000"
+                    android:textStyle="bold" />
+            </RelativeLayout>
 
         </LinearLayout>
 
@@ -92,9 +104,9 @@
                 android:layout_height="0dp"
                 android:id="@+id/text_status"
                 android:layout_gravity="center_horizontal"
-                android:layout_weight="0.46"
+                android:layout_weight="0.6"
                 android:scrollbars="vertical"
-                android:background="#d3d3d3"
+                android:background="#add8e6"
                 android:textColor="#000000"
                 android:gravity="bottom" />
 
@@ -102,14 +114,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_gravity="center_horizontal"
-                android:layout_weight="0.27"
+                android:layout_weight="0.2"
                 android:id="@+id/relative_button"
                 android:background="#ffffff">
 
                 <Button
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/button_guess"
+                    android:text="Input"
                     android:id="@+id/button_guess"
                     android:layout_centerVertical="true"
                     android:layout_centerHorizontal="true"
@@ -122,7 +134,7 @@
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="0.27"
+                android:layout_weight="0.2"
                 android:id="@+id/relative_blank"
                 android:background="#fff">
 
