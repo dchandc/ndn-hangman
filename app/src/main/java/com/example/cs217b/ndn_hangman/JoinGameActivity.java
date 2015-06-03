@@ -93,9 +93,9 @@ public class JoinGameActivity extends ActionBarActivity {
             joinTask.cancel(true);
     }
 
-    public class JoinTask extends AsyncTask<Void, String, ArrayList<Player>> {
+    public class JoinTask extends AsyncTask<Void, String, Void> {
         private final String hubPrefix = "/ndn/edu/ucla/hangman/app";
-        private final String host = "localhost";
+        private final String host = "spurs.cs.ucla.edu";
         private final Face face =  new Face(host);
         private GameSync gs;
         private String name;
@@ -103,6 +103,7 @@ public class JoinGameActivity extends ActionBarActivity {
         private Thread faceThread;
         private boolean start = false;
         private boolean switched = false;
+        private boolean end = false;
         private final int playersPerGame = 2;
 
         private final String allLettersSpaces =
@@ -123,7 +124,7 @@ public class JoinGameActivity extends ActionBarActivity {
         }
 
         @Override
-        protected ArrayList<Player> doInBackground(Void... ignored) {
+        protected Void doInBackground(Void... ignored) {
             try {
                 MemoryIdentityStorage identityStorage = new MemoryIdentityStorage();
                 MemoryPrivateKeyStorage privateKeyStorage = new MemoryPrivateKeyStorage();
@@ -190,6 +191,7 @@ public class JoinGameActivity extends ActionBarActivity {
             gs.roundNum_ = 0;
             do {
                 gs.roundNum_++;
+                gs.guessNum_ = 0;
 
                 // Begin new round
                 pause(1000);
@@ -229,7 +231,6 @@ public class JoinGameActivity extends ActionBarActivity {
                 publishProgress(drawer.name + " chose a " + hangmanBuilder.length() +
                         "-letter word.");
 
-                gs.guessNum_ = 0;
                 while (numberGuessedWrong < numberOfChances && !isCancelled()) {
                     int count;
                     String guessString;
@@ -245,6 +246,7 @@ public class JoinGameActivity extends ActionBarActivity {
                     Player guesser = gs.roster_.get(currentGuesserIndex);
                     pause(500);
                     publishProgress(guesser.name + "'s turn to guess.");
+                    Log.i("join", "guesser=(" + guesser.name + ", " + currentGuesserIndex + ")");
                     guesser.setTurn(true);
                     if (guesser.isLocal) {
                         waitForInput = UserInputType.LETTER;
@@ -254,7 +256,6 @@ public class JoinGameActivity extends ActionBarActivity {
                         }
                         guess = guesser.inputLetter(null);
                         guessString = (new Character(guess)).toString();
-                        Log.i("join", "Guessed " + guessString);
                         try {
                             gs.sendGuessMessage(gs.roundNum_ + "-" + gs.guessNum_ +
                                     "-" + guessString);
@@ -269,7 +270,9 @@ public class JoinGameActivity extends ActionBarActivity {
                         guessString = (new Character(guess)).toString();
                     }
                     remainingString = remainingString.replace(guessString + " ", "");
+                    Log.i("join", "guess=" + guessString);
 
+                    Log.i("join", "drawer=(" + drawer.name + ", " + currentDrawerIndex + ")");
                     drawer.setTurn(true);
                     if (drawer.isLocal) {
                         String prevWord = hangmanBuilder.toString();
@@ -334,22 +337,45 @@ public class JoinGameActivity extends ActionBarActivity {
 
             } while (currentDrawerIndex != firstDrawerIndex && !isCancelled());
 
-            ArrayList<Player> winners = new ArrayList<>();
-            if (!isCancelled()) {
-                int winnerScore = 0;
-                for (int i = 0; i < gs.roster_.size(); i++) {
-                    Player player = gs.roster_.get(i);
-                    if (player.score > winnerScore) {
-                        winnerScore = player.score;
-                    }
-                }
+            pause(1000);
 
-                for (int i = 0; i < gs.roster_.size(); i++) {
-                    Player player = gs.roster_.get(i);
-                    if (player.score == winnerScore)
-                        winners.add(player);
+            end = true;
+            remainingString = "";
+            numberGuessedWrong = numberOfChances;
+            hangmanBuilder = new StringBuilder("");
+
+            ArrayList<Player> winners = new ArrayList<>();
+            int winnerScore = 0;
+            for (int i = 0; i < gs.roster_.size(); i++) {
+                Player player = gs.roster_.get(i);
+                if (player.score > winnerScore) {
+                    winnerScore = player.score;
                 }
             }
+
+            for (int i = 0; i < gs.roster_.size(); i++) {
+                Player player = gs.roster_.get(i);
+                if (player.score == winnerScore)
+                    winners.add(player);
+            }
+
+            StringBuilder sb = new StringBuilder("");
+            for (int i = 0; i < winners.size(); i++) {
+                if (i > 0)
+                    sb.append(", ");
+
+                Player player = winners.get(i);
+                sb.append(player.name);
+            }
+
+            if (winners.size() > 1)
+                sb.append(" tie!");
+            else
+                sb.append(" wins!");
+
+            publishProgress(sb.toString());
+
+            pause(10000);
 
             Log.i("join", "Cleaning up");
             try {
@@ -362,7 +388,7 @@ public class JoinGameActivity extends ActionBarActivity {
                 e.printStackTrace();
             }
 
-            return winners;
+            return null;
         }
 
         @Override
@@ -517,39 +543,6 @@ public class JoinGameActivity extends ActionBarActivity {
                     }
                 });
             }
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<Player> winners) {
-            Log.i("game", "[onPostExecute]");
-
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < gs.roster_.size(); i++) {
-                Player player = gs.roster_.get(i);
-                sb.append(player.name + ": " + player.score + "\n");
-            }
-
-            tv_score.setText(sb.toString());
-
-            tv_letters.setText("");
-
-            img_man.setImageResource(hangmanImages[numberOfChances]);
-
-            sb = new StringBuilder("");
-            for (int i = 0; i < winners.size(); i++) {
-                if (i > 0)
-                    sb.append(", ");
-
-                Player player = winners.get(i);
-                sb.append(player.name);
-            }
-
-            if (winners.size() > 1)
-                sb.append(" tie!");
-            else
-                sb.append(" wins!");
-
-            tv_status.append(sb.toString());
         }
 
         private void pause(long ms) {

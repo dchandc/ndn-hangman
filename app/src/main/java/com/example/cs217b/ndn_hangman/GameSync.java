@@ -162,7 +162,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         } else if (type.equals(Messages.MessageType.LEAVE)) {
             for (i = 0; i < roster_.size(); i++) {
                 player = roster_.get(i);
-                if (player.name == name && player.sessionNo == sessionNo &&
+                if (player.name.equals(name) && player.sessionNo == sessionNo &&
                         player.sid.equals(sid)) {
                     roster_.remove(i);
                     Log.i("gamesync", "[onData] removed player=(" + player.name + ", " +
