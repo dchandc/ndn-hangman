@@ -33,6 +33,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 
+//TODO: Add comments and clean up
+//TODO: Make sure leave works
+//TODO: Add more game info to screen (round, guess, etc.)
+//TODO: Fix AIGame endgame
+//TODO: Add roster checks and security
+//TODO: Add dictionary
+
 public class JoinGameActivity extends ActionBarActivity {
     private Context context;
     private JoinTask joinTask;

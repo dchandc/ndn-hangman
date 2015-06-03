@@ -122,7 +122,11 @@ public class NewGameActivity extends ActionBarActivity {
 
                 Player drawer = players.get(currentDrawerIndex);
                 publishProgress(drawer.name + "'s turn to choose a word.");
+                drawer.setTurn(true);
 
+                while(drawer.isThinking()) {
+                    pause(100);
+                }
                 String chosenWord = drawer.inputWord();
                 String remainingWord = chosenWord;
                 char[] tmpArray = new char[chosenWord.length()];
@@ -140,7 +144,11 @@ public class NewGameActivity extends ActionBarActivity {
                     Player guesser = players.get(currentGuesserIndex);
                     pause(500);
                     publishProgress(guesser.name + "'s turn to guess.");
+                    guesser.setTurn(true);
 
+                    while(guesser.isThinking()) {
+                        pause(100);
+                    }
                     char guess = guesser.inputLetter(availableLetters);
                     String guessString = (new Character(guess)).toString();
 
