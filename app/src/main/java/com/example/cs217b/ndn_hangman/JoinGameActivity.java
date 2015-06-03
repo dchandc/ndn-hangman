@@ -30,7 +30,6 @@ import net.named_data.jndn.util.Blob;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 
@@ -232,8 +231,6 @@ public class JoinGameActivity extends ActionBarActivity {
 
                 gs.guessNum_ = 0;
                 while (numberGuessedWrong < numberOfChances && !isCancelled()) {
-                    gs.guessNum_++;
-
                     int count;
                     String guessString;
                     char guess;
@@ -241,6 +238,9 @@ public class JoinGameActivity extends ActionBarActivity {
                     currentGuesserIndex = (currentGuesserIndex + 1) % gs.roster_.size();
                     if (currentGuesserIndex == currentDrawerIndex)
                         continue;
+
+                    gs.guessNum_++;
+                    Log.i("join", "roundNum=" + gs.roundNum_ + " guessNum=" + gs.guessNum_);
 
                     Player guesser = gs.roster_.get(currentGuesserIndex);
                     pause(500);
@@ -254,6 +254,7 @@ public class JoinGameActivity extends ActionBarActivity {
                         }
                         guess = guesser.inputLetter(null);
                         guessString = (new Character(guess)).toString();
+                        Log.i("join", "Guessed " + guessString);
                         try {
                             gs.sendGuessMessage(gs.roundNum_ + "-" + gs.guessNum_ +
                                     "-" + guessString);

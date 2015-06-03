@@ -219,6 +219,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                             builder.setWord(tempMessage.getMessage());
                             builder.setTimestamp((int) Math.round(tempMessage.getTime() / 1000.0));
                             gotPlay = true;
+                            break;
                         }
                     }
 
@@ -297,7 +298,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             interest.setInterestLifetimeMilliseconds(syncLifetime_);
             Log.i("gamesync", "[onReceivedSyncState] express interest uri=" + uri);
             try {
-                face_.expressInterest(interest, this, ChatTimeout.onTimeout_);
+                face_.expressInterest(interest, this, SyncTimeout.onTimeout_);
             } catch (IOException ex) {
                 Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
                 return;
@@ -305,13 +306,13 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         }
     }
 
-    private static class ChatTimeout implements OnTimeout {
+    private static class SyncTimeout implements OnTimeout {
         public final void
         onTimeout(Interest interest) {
-            Log.i("gamesync", "[ChatTimeout] timed out");
+            Log.i("gamesync", "[SyncTimeout] timed out");
         }
 
-        public final static OnTimeout onTimeout_ = new ChatTimeout();
+        public final static OnTimeout onTimeout_ = new SyncTimeout();
     }
 
     /**
@@ -338,7 +339,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             // Call again if necessary
             if (!done) {
                 Interest timeout = new Interest(new Name("/local/timeout"));
-                timeout.setInterestLifetimeMilliseconds(60000);
+                timeout.setInterestLifetimeMilliseconds(30000);
                 try {
                     face_.expressInterest(timeout, DummyOnData.onData_, heartbeat_);
                 } catch (Exception ex) {
