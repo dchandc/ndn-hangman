@@ -95,7 +95,7 @@ public class JoinGameActivity extends ActionBarActivity {
 
     public class JoinTask extends AsyncTask<Void, String, ArrayList<Player>> {
         private final String hubPrefix = "/ndn/edu/ucla/hangman/app";
-        private final String host = "localhost";
+        private final String host = "spurs.cs.ucla.edu";
         private final Face face =  new Face(host);
         private GameSync gs;
         private String name;
@@ -373,8 +373,9 @@ public class JoinGameActivity extends ActionBarActivity {
                 StringBuilder sb = new StringBuilder("");
                 for (int i = 0; i < gs.roster_.size(); i++) {
                     String playerName = gs.roster_.get(i).name;
+                    sb.append("Player: ");
                     sb.append(playerName);
-                    sb.append("\n");
+                    sb.append(" joined game.\n");
                 }
                 tv_roster.setText(sb.toString());
                 return;
