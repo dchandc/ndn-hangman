@@ -1,11 +1,7 @@
 package com.example.cs217b.ndn_hangman;
 
 import java.util.Random;
-import android.os.Handler;
 
-/**
- * Created by Dennis on 5/2/2015.
- */
 public class AIPlayer extends Player {
     private static final long thinkTime = 500;
     private String[] words;

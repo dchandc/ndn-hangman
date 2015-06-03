@@ -2,20 +2,18 @@ package com.example.cs217b.ndn_hangman;
 
 import java.nio.ByteBuffer;
 
-/**
- * Created by parallels on 5/23/15.
- */
 public class Keys {
     private static ByteBuffer
     toBuffer(int[] array)
     {
         ByteBuffer result = ByteBuffer.allocate(array.length);
-        for (int i = 0; i < array.length; ++i)
-            result.put((byte)(array[i] & 0xff));
+        for (int i = 0; i < array.length; ++i) {
+            result.put((byte) (array[i] & 0xff));
+        }
 
         result.flip();
         return result;
-    };
+    }
 
     public static final ByteBuffer DEFAULT_RSA_PUBLIC_KEY_DER = toBuffer(new int[] {
             0x30, 0x82, 0x01, 0x22, 0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01,
