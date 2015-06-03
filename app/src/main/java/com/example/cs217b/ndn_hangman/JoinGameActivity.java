@@ -334,9 +334,9 @@ public class JoinGameActivity extends ActionBarActivity {
 
             } while (currentDrawerIndex != firstDrawerIndex && !isCancelled());
 
+            ArrayList<Player> winners = new ArrayList<>();
             if (!isCancelled()) {
                 int winnerScore = 0;
-                ArrayList<Player> winners = new ArrayList<>();
                 for (int i = 0; i < gs.roster_.size(); i++) {
                     Player player = gs.roster_.get(i);
                     if (player.score > winnerScore) {
@@ -349,22 +349,20 @@ public class JoinGameActivity extends ActionBarActivity {
                     if (player.score == winnerScore)
                         winners.add(player);
                 }
-
-                return winners;
-            } else {
-                Log.i("join", "Cleaning up");
-                try {
-                    gs.sendLeaveMessage();
-                    Thread.sleep(10000);
-                    gs.sync_.shutdown();
-                    gs.done = true;
-                    faceThread.interrupt();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                return null;
             }
+
+            Log.i("join", "Cleaning up");
+            try {
+                gs.sendLeaveMessage();
+                Thread.sleep(10000);
+                gs.sync_.shutdown();
+                gs.done = true;
+                faceThread.interrupt();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            return winners;
         }
 
         @Override
@@ -552,17 +550,6 @@ public class JoinGameActivity extends ActionBarActivity {
                 sb.append(" wins!");
 
             tv_status.append(sb.toString());
-
-            Log.i("join", "Cleaning up");
-            try {
-                gs.sendLeaveMessage();
-                Thread.sleep(10000);
-                gs.sync_.shutdown();
-                gs.done = true;
-                faceThread.interrupt();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
 
         private void pause(long ms) {

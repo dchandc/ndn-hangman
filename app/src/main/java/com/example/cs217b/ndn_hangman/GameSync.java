@@ -309,7 +309,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     private static class SyncTimeout implements OnTimeout {
         public final void
         onTimeout(Interest interest) {
-            Log.i("gamesync", "[SyncTimeout] timed out");
+            Log.i("gamesync", "[SyncTimeout] timed out interest=" + interest.toUri());
         }
 
         public final static OnTimeout onTimeout_ = new SyncTimeout();
