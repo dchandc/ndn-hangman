@@ -17,7 +17,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".NewGameActivity"
+            android:name=".AIGameActivity"
             android:label="@string/ai_game" >
         </activity>
         <activity

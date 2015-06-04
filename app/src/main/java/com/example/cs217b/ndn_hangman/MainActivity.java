@@ -20,8 +20,8 @@ public class MainActivity extends ActionBarActivity {
         button_new.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i("clicks", "New Game button clicked");
-                Intent intent = new Intent(MainActivity.this, NewGameActivity.class);
+                Log.i("main", "AI Game button clicked");
+                Intent intent = new Intent(MainActivity.this, AIGameActivity.class);
                 startActivity(intent);
                 finish();
             }
@@ -31,7 +31,7 @@ public class MainActivity extends ActionBarActivity {
         button_join.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.i("clicks", "Join Game button clicked");
+                Log.i("main", "Join Game button clicked");
                 Intent intent = new Intent(MainActivity.this, JoinGameActivity.class);
                 startActivity(intent);
                 finish();

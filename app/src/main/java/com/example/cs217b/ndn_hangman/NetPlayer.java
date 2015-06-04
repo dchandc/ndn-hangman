@@ -1,5 +1,8 @@
 package com.example.cs217b.ndn_hangman;
 
+/**
+ * This class represents any online human player.
+ */
 public class NetPlayer extends Player{
     String storedWord;
     char storedLetter;

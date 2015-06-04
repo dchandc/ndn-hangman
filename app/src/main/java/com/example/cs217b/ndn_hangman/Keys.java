@@ -2,6 +2,9 @@ package com.example.cs217b.ndn_hangman;
 
 import java.nio.ByteBuffer;
 
+/**
+ * This class holds the ByteBuffers needed to generate test keys.
+ */
 public class Keys {
     private static ByteBuffer
     toBuffer(int[] array)

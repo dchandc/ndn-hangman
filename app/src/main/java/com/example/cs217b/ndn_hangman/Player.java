@@ -1,5 +1,8 @@
 package com.example.cs217b.ndn_hangman;
 
+/**
+ * This class is the superclass for all players in this game.
+ */
 public abstract class Player {
     public String name;
     public int score;

@@ -3,11 +3,9 @@ package com.example.cs217b.ndn_hangman;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
 import android.text.InputType;
 import android.text.method.ScrollingMovementMethod;
@@ -21,22 +19,24 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.Random;
 
 /**
- * Created by Dennis on 5/2/2015.
+ * This class represents a game between a local human player and multiple AI players.
  */
-public class NewGameActivity extends ActionBarActivity {
-    private TextView tv_score, tv_status, tv_letters, tv_remain;
+public class AIGameActivity extends ActionBarActivity {
+    private final int numberOfPlayers = 4;
+    private final int numberOfChances = 6;
+    private Context context;
+    private TextView tv_score;
+    private TextView tv_status;
+    private TextView tv_letters;
+    private TextView tv_remain;
     private ImageView img_man;
     private Button btn_guess;
     private int[] hangmanImages;
-    private final int numberOfChances = 6;
+    private enum UserInputType {NONE, WORD, LETTER}
     private GameTask gameTask;
-    private Object lock;
-    private enum UserInputType {NONE, WORD, LETTER};
-    private Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,8 +64,7 @@ public class NewGameActivity extends ActionBarActivity {
         tv_status.setMovementMethod(new ScrollingMovementMethod());
 
         if (savedInstanceState == null) {
-            lock = new Object();
-            gameTask = new GameTask(4, lock);
+            gameTask = new GameTask(numberOfPlayers);
             gameTask.execute();
         }
     }
@@ -73,31 +72,31 @@ public class NewGameActivity extends ActionBarActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        gameTask.cancel(true);
+        if (gameTask != null)
+            gameTask.cancel(true);
     }
 
-    public class GameTask extends AsyncTask<Void, String, ArrayList<Player>> {
-        private ArrayList<Player> players;
+    public class GameTask extends AsyncTask<Void, String, Void> {
         private final String allAvailableLetters = "abcdefghijklmnopqrstuvwxyz";
         private final String allLettersSpaces =
                 "a b c d e f g h i j k l m n o p q r s t u v w x y z ";
-        private final int guesserBonus = 100;
-        private final int drawerBonus = 100;
+        private final int guesserBonus = 200;
+        private final int drawerBonus = 400;
+        private final Object lock = new Object();
+        private ArrayList<Player> players;
         private int firstDrawerIndex;
         private int currentDrawerIndex;
         private int currentGuesserIndex;
-        private StringBuilder hangmanBuilder;
         private int numberGuessedWrong;
-        private Object lock;
         private UserInputType waitForInput;
         private String remainingString;
+        private StringBuilder hangmanBuilder;
 
-        public GameTask(int numberOfPlayers, Object lock) {
+        public GameTask(int numberOfPlayers) {
             if (numberOfPlayers < 2 || numberOfPlayers > 4)
                 throw new IllegalArgumentException("Number of players must be between 2 and 4");
 
-            this.lock = lock;
-
+            // Populate list with one local human player and at least one AI player.
             players = new ArrayList<>();
             players.add(new LocalPlayer("LocalPlayer"));
             for (int i = 0; i < numberOfPlayers - 1; i++) {
@@ -111,19 +110,25 @@ public class NewGameActivity extends ActionBarActivity {
         }
 
         @Override
-        protected ArrayList<Player> doInBackground(Void... ignored) {
+        protected Void doInBackground(Void... ignored) {
+            int roundNum = 0;
+            int guessNum = 0;
             do {
-                // Begin new round
+                roundNum++;
+                guessNum = 0;
+
+                // Begin new round.
                 pause(1000);
                 String availableLetters = allAvailableLetters;
                 numberGuessedWrong = 0;
                 hangmanBuilder = new StringBuilder("");
                 remainingString = "";
 
+                // Prompt the drawer to choose a word.
                 Player drawer = players.get(currentDrawerIndex);
+                Log.i("ai_game", "drawer=" + drawer.name + " [" + currentDrawerIndex + "]");
                 publishProgress(drawer.name + "'s turn to choose a word.");
                 drawer.setTurn(true);
-
                 while(drawer.isThinking()) {
                     pause(100);
                 }
@@ -133,25 +138,30 @@ public class NewGameActivity extends ActionBarActivity {
                 Arrays.fill(tmpArray, '_');
                 hangmanBuilder = new StringBuilder(new String(tmpArray));
                 remainingString = allLettersSpaces;
-                Log.i("game", drawer.name + " chose the word '" + chosenWord + "'");
+                Log.i("ai_game", "word=" + chosenWord + " (" + chosenWord.length() + ")");
                 publishProgress(drawer.name + " chose a " + chosenWord.length() + "-letter word.");
 
-                while (numberGuessedWrong < numberOfChances) {
+                // Loop through remaining players for guesses until word is guessed or chances
+                // are used up.
+                while (numberGuessedWrong < numberOfChances && !isCancelled()) {
                     currentGuesserIndex = (currentGuesserIndex + 1) % players.size();
                     if (currentGuesserIndex == currentDrawerIndex)
                         continue;
 
+                    guessNum++;
+                    Log.i("ai_game", "roundNum=" + roundNum + " guessNum=" + guessNum);
+
+                    // Prompt the guesser to choose a letter.
                     Player guesser = players.get(currentGuesserIndex);
                     pause(500);
+                    Log.i("ai_game", "guesser=" + guesser.name + " [" + currentGuesserIndex + "]");
                     publishProgress(guesser.name + "'s turn to guess.");
                     guesser.setTurn(true);
-
                     while(guesser.isThinking()) {
                         pause(100);
                     }
                     char guess = guesser.inputLetter(availableLetters);
-                    String guessString = (new Character(guess)).toString();
-
+                    String guessString = Character.valueOf(guess).toString();
                     availableLetters = availableLetters.replace(guessString, "");
                     remainingString = remainingString.replace(guessString + " ", "");
                     String updatedWord = remainingWord.replace(guessString, "");
@@ -159,7 +169,10 @@ public class NewGameActivity extends ActionBarActivity {
                     int points = count * 100;
                     guesser.score += points;
                     remainingWord = updatedWord;
+                    Log.i("ai_game", "guess=" + guessString + " count=" + count + " remainder=" +
+                            remainingWord);
 
+                    // Update the underscored word by filling in the new letter.
                     int fromIndex = 0;
                     int replaceIndex = chosenWord.indexOf(guess, fromIndex);
                     while (replaceIndex != -1) {
@@ -168,11 +181,7 @@ public class NewGameActivity extends ActionBarActivity {
                         replaceIndex = chosenWord.indexOf(guess, fromIndex);
                     }
 
-                    Log.i("game", guesser.name + " guessed the letter " + guessString);
-                    Log.i("game", guesser.name + " scored " + (count * 100) + " points");
-                    Log.i("game", "Available letters: " + availableLetters);
-                    Log.i("game", "Word: " + remainingWord);
-
+                    // Update the game status and check for the end to this round.
                     if (count == 0) {
                         numberGuessedWrong++;
                         publishProgress(guesser.name + " incorrectly guessed the letter '" +
@@ -180,7 +189,6 @@ public class NewGameActivity extends ActionBarActivity {
 
                         if (numberGuessedWrong >= numberOfChances) {
                             drawer.score += drawerBonus;
-                            Log.i("game", "Drawer (+" + drawerBonus + "): " + drawer.score);
                             publishProgress(drawer.name + " scored " + drawerBonus + " points " +
                                     "for completing Hangman!");
                             break;
@@ -202,24 +210,51 @@ public class NewGameActivity extends ActionBarActivity {
 
                 currentDrawerIndex = (currentDrawerIndex + 1) % players.size();
 
-            } while (currentDrawerIndex != firstDrawerIndex);
+            } while (currentDrawerIndex != firstDrawerIndex && !isCancelled());
 
-            int winnerScore = 0;
-            ArrayList<Player> winners = new ArrayList<Player>();
-            for (int i = 0; i < players.size(); i++) {
-                Player player = players.get(i);
-                if (player.score > winnerScore) {
-                    winnerScore = player.score;
+            pause(1000);
+
+            // Reset screen assets.
+            remainingString = "";
+            numberGuessedWrong = numberOfChances;
+            hangmanBuilder = new StringBuilder("");
+
+            // Determine the winner(s) by score, allowing for ties.
+            if (!isCancelled()) {
+                int winnerScore = 0;
+                ArrayList<Player> winners = new ArrayList<>();
+                for (int i = 0; i < players.size(); i++) {
+                    Player player = players.get(i);
+                    if (player.score > winnerScore) {
+                        winnerScore = player.score;
+                    }
                 }
+
+                for (int i = 0; i < players.size(); i++) {
+                    Player player = players.get(i);
+                    if (player.score == winnerScore)
+                        winners.add(player);
+                }
+
+                StringBuilder sb = new StringBuilder("");
+                for (int i = 0; i < winners.size(); i++) {
+                    if (i > 0)
+                        sb.append(", ");
+
+                    Player player = winners.get(i);
+                    sb.append(player.name);
+                }
+
+                if (winners.size() > 1)
+                    sb.append(" tie!");
+                else
+                    sb.append(" wins!");
+
+                publishProgress(sb.toString());
             }
 
-            for (int i = 0; i < players.size(); i++) {
-                Player player = players.get(i);
-                if (player.score == winnerScore)
-                    winners.add(player);
-            }
-
-            return winners;
+            Log.i("ai_game", "end background thread");
+            return null;
         }
 
         @Override
@@ -227,7 +262,8 @@ public class NewGameActivity extends ActionBarActivity {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < players.size(); i++) {
                 Player player = players.get(i);
-                sb.append(player.name + ": " + player.score + "\n");
+                String str = player.name + ": " + player.score + "\n";
+                sb.append(str);
             }
 
             tv_score.setText(sb.toString());
@@ -241,6 +277,8 @@ public class NewGameActivity extends ActionBarActivity {
 
             tv_remain.setText(remainingString);
 
+            // Enable the input button and use the Object lock to signal back to the background
+            // thread when input is received.
             if (waitForInput == UserInputType.WORD) {
                 btn_guess.setEnabled(true);
                 btn_guess.setOnClickListener(new View.OnClickListener() {
@@ -346,39 +384,6 @@ public class NewGameActivity extends ActionBarActivity {
             }
         }
 
-        @Override
-        protected void onPostExecute(ArrayList<Player> winners) {
-            Log.i("game", "GameTask complete");
-
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < players.size(); i++) {
-                Player player = players.get(i);
-                sb.append(player.name + ": " + player.score + "\n");
-            }
-
-            tv_score.setText(sb.toString());
-
-            tv_letters.setText("");
-
-            img_man.setImageResource(hangmanImages[numberOfChances]);
-
-            sb = new StringBuilder("");
-            for (int i = 0; i < winners.size(); i++) {
-                if (i > 0)
-                    sb.append(", ");
-
-                Player player = winners.get(i);
-                sb.append(player.name);
-            }
-
-            if (winners.size() > 1)
-                sb.append(" tie!");
-            else
-                sb.append(" wins!");
-
-            tv_status.append(sb.toString());
-        }
-
         private void pause(long ms) {
             try {
                 Thread.sleep(ms);
@@ -387,12 +392,17 @@ public class NewGameActivity extends ActionBarActivity {
             }
         }
 
+        /**
+         * This class represents the local human player. This class is used in place of NetPlayer
+         * because an Object lock is more appropriate for notification in local-only games.
+         */
         private class LocalPlayer extends Player {
             String inputWord;
             char inputLetter;
 
             public LocalPlayer(String name) {
                 this.name = name;
+                this.score = 0;
             }
 
             @Override
@@ -426,9 +436,7 @@ public class NewGameActivity extends ActionBarActivity {
             }
 
             @Override
-            public void setTurn(boolean turnState) {
-
-            }
+            public void setTurn(boolean turnState) {}
 
             @Override
             public boolean isThinking() {
@@ -436,14 +444,10 @@ public class NewGameActivity extends ActionBarActivity {
             }
 
             @Override
-            public void think(String word) {
-
-            }
+            public void think(String word) {}
 
             @Override
-            public void think(char letter) {
-
-            }
+            public void think(char letter) {}
         }
     }
 }

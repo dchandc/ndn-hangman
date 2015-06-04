@@ -110,7 +110,6 @@ public class JoinGameActivity extends ActionBarActivity {
         private Thread faceThread;
         private boolean start = false;
         private boolean switched = false;
-        private boolean end = false;
         private final int playersPerGame = 2;
 
         private final String allLettersSpaces =
@@ -346,7 +345,6 @@ public class JoinGameActivity extends ActionBarActivity {
 
             pause(1000);
 
-            end = true;
             remainingString = "";
             numberGuessedWrong = numberOfChances;
             hangmanBuilder = new StringBuilder("");
