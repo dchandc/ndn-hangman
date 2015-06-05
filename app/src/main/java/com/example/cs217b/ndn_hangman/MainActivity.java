@@ -29,7 +29,7 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 Log.i("main", "Join Game button clicked");
-                Intent intent = new Intent(MainActivity.this, JoinGameActivity.class);
+                Intent intent = new Intent(MainActivity.this, OnlineGameActivity.class);
                 startActivity(intent);
                 finish();
             }

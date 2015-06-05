@@ -3,12 +3,12 @@ package com.example.cs217b.ndn_hangman;
 /**
  * This class represents any online human player.
  */
-public class NetPlayer extends Player{
+public class OnlinePlayer extends Player{
     String storedWord;
     char storedLetter;
     boolean isThinking;
 
-    public NetPlayer(String name, long sessionNo, String sid, boolean isLocal) {
+    public OnlinePlayer(String name, long sessionNo, String sid, boolean isLocal) {
         this.name = name;
         this.score = 0;
         this.isLocal = isLocal;

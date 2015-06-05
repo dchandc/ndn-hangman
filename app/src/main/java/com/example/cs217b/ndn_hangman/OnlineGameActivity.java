@@ -36,7 +36,7 @@ import java.util.Comparator;
 /**
  * This class represents a game between a local human player and multiple online players.
  */
-public class JoinGameActivity extends ActionBarActivity {
+public class OnlineGameActivity extends ActionBarActivity {
     private final int numberOfPlayers = 3;
     private final int numberOfChances = 6;
     private Context context;

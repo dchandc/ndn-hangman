@@ -85,7 +85,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             return;
         }
 
-        roster_.add(new NetPlayer(playerName_, sessionNo_, sid_, true));
+        roster_.add(new OnlinePlayer(playerName_, sessionNo_, sid_, true));
         try {
             join();
         } catch (Exception e) {
@@ -136,7 +136,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         }
 
         if (i == roster_.size() && type.equals(Messages.MessageType.JOIN)) {
-            player = new NetPlayer(name, sessionNo, sid, false);
+            player = new OnlinePlayer(name, sessionNo, sid, false);
             roster_.add(player);
             Log.i("sync", "[onData] added player=(" + name + ", " + sessionNo + ", " +
                     sid + ")");

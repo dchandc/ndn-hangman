@@ -397,7 +397,7 @@ public class AIGameActivity extends ActionBarActivity {
         }
 
         /**
-         * This class represents the local human player. This class is used in place of NetPlayer
+         * This class represents the local human player. This class is used in place of OnlinePlayer
          * because an Object lock is more appropriate for notification in local-only games.
          */
         private class LocalPlayer extends Player {

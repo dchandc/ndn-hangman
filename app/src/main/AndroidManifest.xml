@@ -21,7 +21,7 @@
             android:label="@string/ai_game" >
         </activity>
         <activity
-            android:name=".JoinGameActivity"
+            android:name=".OnlineGameActivity"
             android:label="@string/online_game" >
         </activity>
     </application>
