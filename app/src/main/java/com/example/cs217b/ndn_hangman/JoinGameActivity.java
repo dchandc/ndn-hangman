@@ -33,41 +33,40 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 
-//TODO: Add comments and clean up
-//TODO: Make sure leave works
-//TODO: Add more game info to screen (round, guess, etc.)
-//TODO: Fix AIGame endgame
-//TODO: Add roster checks and security
-//TODO: Add dictionary
-
+/**
+ * This class represents a game between a local human player and multiple online players.
+ */
 public class JoinGameActivity extends ActionBarActivity {
+    private final int numberOfPlayers = 3;
+    private final int numberOfChances = 6;
     private Context context;
-    private JoinTask joinTask;
-
+    private enum UserInputType {NONE, WORD, LETTER};
+    private GameTask gameTask;
     // activity_joingame layout
     private EditText etv_name;
     private EditText etv_room;
     private TextView tv_roster;
     private Button btn_startjoin;
-
     // activity_newgame layout
-    private TextView tv_score, tv_status, tv_letters, tv_remain;
+    private TextView tv_score;
+    private TextView tv_status;
+    private TextView tv_letters;
+    private TextView tv_remain;
     private ImageView img_man;
     private Button btn_guess;
     private int[] hangmanImages;
-    private final int numberOfChances = 6;
-    private enum UserInputType {NONE, WORD, LETTER};
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_joingame);
 
+        context = this;
+
         etv_name = (EditText) findViewById(R.id.etext_name);
         etv_room = (EditText) findViewById(R.id.etext_room);
         tv_roster = (TextView) findViewById(R.id.text_roster);
-
-        context = this;
 
         btn_startjoin = (Button) findViewById(R.id.button_startjoin);
         btn_startjoin.setOnClickListener(new View.OnClickListener() {
@@ -84,8 +83,8 @@ public class JoinGameActivity extends ActionBarActivity {
                     etv_room.setEnabled(false);
                     btn_startjoin.setEnabled(false);
 
-                    joinTask = new JoinTask(name, room);
-                    joinTask.execute();
+                    gameTask = new GameTask(name, room);
+                    gameTask.execute();
                 } else {
                     Toast.makeText(context, "Invalid input", Toast.LENGTH_SHORT).show();
                 }
@@ -96,11 +95,14 @@ public class JoinGameActivity extends ActionBarActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (joinTask != null)
-            joinTask.cancel(true);
+        if (gameTask != null)
+            gameTask.cancel(true);
     }
 
-    public class JoinTask extends AsyncTask<Void, String, Void> {
+    /**
+     * This class allows game logic to run in the background while updating the UI.
+     */
+    public class GameTask extends AsyncTask<Void, String, Void> {
         private final String hubPrefix = "/ndn/edu/ucla/hangman/app";
         private final String host = "spurs.cs.ucla.edu";
         private final Face face =  new Face(host);
@@ -110,7 +112,6 @@ public class JoinGameActivity extends ActionBarActivity {
         private Thread faceThread;
         private boolean start = false;
         private boolean switched = false;
-        private final int playersPerGame = 2;
 
         private final String allLettersSpaces =
                 "a b c d e f g h i j k l m n o p q r s t u v w x y z ";
@@ -119,12 +120,12 @@ public class JoinGameActivity extends ActionBarActivity {
         private int firstDrawerIndex;
         private int currentDrawerIndex;
         private int currentGuesserIndex;
-        private StringBuilder hangmanBuilder;
         private int numberGuessedWrong;
         private UserInputType waitForInput;
         private String remainingString;
+        private StringBuilder hangmanBuilder;
 
-        public JoinTask(String name, String room) {
+        public GameTask(String name, String room) {
             this.name = name;
             this.room = room;
         }
@@ -132,6 +133,7 @@ public class JoinGameActivity extends ActionBarActivity {
         @Override
         protected Void doInBackground(Void... ignored) {
             try {
+                // Set up identity and initialize sync.
                 MemoryIdentityStorage identityStorage = new MemoryIdentityStorage();
                 MemoryPrivateKeyStorage privateKeyStorage = new MemoryPrivateKeyStorage();
                 KeyChain keyChain = new KeyChain
@@ -153,6 +155,7 @@ public class JoinGameActivity extends ActionBarActivity {
                 return null;
             }
 
+            // Kick off thread dedicated to processing events.
             faceThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -170,23 +173,38 @@ public class JoinGameActivity extends ActionBarActivity {
             faceThread.start();
 
             while (!isCancelled()) {
-                if (gs.roster_.size() < playersPerGame) {
+                if (gs.roster_.size() < numberOfPlayers) {
                     publishProgress();
                     pause(1000);
                 } else {
                     publishProgress();
                     pause(2000);
                     start = true;
-                    publishProgress("Initializing game...");
+                    publishProgress();
                     break;
                 }
             }
 
-            // Begin game logic
+            if (isCancelled()) {
+                Log.i("online", "leave and cleanup");
+                gs.done = true;
+                try {
+                    gs.leave();
+                    Thread.sleep(10000);
+                    gs.sync_.shutdown();
+                    faceThread.interrupt();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            }
+
+            // Begin game logic.
             firstDrawerIndex = 0;
             currentDrawerIndex = firstDrawerIndex;
             currentGuesserIndex = firstDrawerIndex;
 
+            // Sort by sid to maintain a consistent view of the player roster.
             Collections.sort(gs.roster_, new Comparator<Player>() {
                 @Override
                 public int compare(Player lhs, Player rhs) {
@@ -199,14 +217,16 @@ public class JoinGameActivity extends ActionBarActivity {
                 gs.roundNum_++;
                 gs.guessNum_ = 0;
 
-                // Begin new round
+                // Begin new round.
                 pause(1000);
                 String chosenWord;
                 numberGuessedWrong = 0;
                 hangmanBuilder = new StringBuilder("");
                 remainingString = "";
 
+                // Prompt the drawer to choose a word.
                 Player drawer = gs.roster_.get(currentDrawerIndex);
+                Log.i("online", "drawer=" + drawer.name + " [" + currentDrawerIndex + "]");
                 publishProgress(drawer.name + "'s turn to choose a word.");
                 drawer.setTurn(true);
                 if (drawer.isLocal) {
@@ -221,7 +241,7 @@ public class JoinGameActivity extends ActionBarActivity {
                     String underscoredWord = new String(tmpArray);
                     hangmanBuilder = new StringBuilder(underscoredWord);
                     try {
-                        gs.sendEvalMessage(gs.roundNum_ + "-" + gs.guessNum_ + "-" +
+                        gs.eval(gs.roundNum_ + "-" + gs.guessNum_ + "-" +
                                 hangmanBuilder.toString());
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -234,9 +254,12 @@ public class JoinGameActivity extends ActionBarActivity {
                     hangmanBuilder = new StringBuilder(chosenWord);
                 }
                 remainingString = allLettersSpaces;
+                Log.i("online", "word=" + chosenWord + " (" + chosenWord.length() + ")");
                 publishProgress(drawer.name + " chose a " + hangmanBuilder.length() +
                         "-letter word.");
 
+                // Loop through remaining players for guesses until word is guessed or chances
+                // are used up.
                 while (numberGuessedWrong < numberOfChances && !isCancelled()) {
                     int count;
                     String guessString;
@@ -247,12 +270,13 @@ public class JoinGameActivity extends ActionBarActivity {
                         continue;
 
                     gs.guessNum_++;
-                    Log.i("join", "roundNum=" + gs.roundNum_ + " guessNum=" + gs.guessNum_);
+                    Log.i("online", "roundNum=" + gs.roundNum_ + " guessNum=" + gs.guessNum_);
 
                     Player guesser = gs.roster_.get(currentGuesserIndex);
                     pause(500);
+                    Log.i("online", "guesser=" + guesser.name + " [" +
+                            currentGuesserIndex + "]");
                     publishProgress(guesser.name + "'s turn to guess.");
-                    Log.i("join", "guesser=(" + guesser.name + ", " + currentGuesserIndex + ")");
                     guesser.setTurn(true);
                     if (guesser.isLocal) {
                         waitForInput = UserInputType.LETTER;
@@ -263,7 +287,7 @@ public class JoinGameActivity extends ActionBarActivity {
                         guess = guesser.inputLetter(null);
                         guessString = (new Character(guess)).toString();
                         try {
-                            gs.sendGuessMessage(gs.roundNum_ + "-" + gs.guessNum_ +
+                            gs.guess(gs.roundNum_ + "-" + gs.guessNum_ +
                                     "-" + guessString);
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -276,9 +300,8 @@ public class JoinGameActivity extends ActionBarActivity {
                         guessString = (new Character(guess)).toString();
                     }
                     remainingString = remainingString.replace(guessString + " ", "");
-                    Log.i("join", "guess=" + guessString);
+                    Log.i("online", "guess=" + guessString);
 
-                    Log.i("join", "drawer=(" + drawer.name + ", " + currentDrawerIndex + ")");
                     drawer.setTurn(true);
                     if (drawer.isLocal) {
                         String prevWord = hangmanBuilder.toString();
@@ -293,7 +316,7 @@ public class JoinGameActivity extends ActionBarActivity {
                         count = currWord.replace("_", "").length() -
                                 prevWord.replace("_", "").length();
                         try {
-                            gs.sendEvalMessage(gs.roundNum_ + "-" + gs.guessNum_ + "-" +
+                            gs.eval(gs.roundNum_ + "-" + gs.guessNum_ + "-" +
                                     hangmanBuilder.toString());
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -311,6 +334,7 @@ public class JoinGameActivity extends ActionBarActivity {
 
                     int points = count * 100;
                     guesser.score += points;
+                    Log.i("online", "count=" + count);
 
                     if (count == 0) {
                         numberGuessedWrong++;
@@ -319,7 +343,6 @@ public class JoinGameActivity extends ActionBarActivity {
 
                         if (numberGuessedWrong >= numberOfChances) {
                             drawer.score += drawerBonus;
-                            Log.i("game", "Drawer (+" + drawerBonus + "): " + drawer.score);
                             publishProgress(drawer.name + " scored " + drawerBonus + " points " +
                                     "for completing Hangman!");
                             break;
@@ -345,59 +368,65 @@ public class JoinGameActivity extends ActionBarActivity {
 
             pause(1000);
 
+            // Reset screen assets.
             remainingString = "";
             numberGuessedWrong = numberOfChances;
             hangmanBuilder = new StringBuilder("");
 
-            ArrayList<Player> winners = new ArrayList<>();
-            int winnerScore = 0;
-            for (int i = 0; i < gs.roster_.size(); i++) {
-                Player player = gs.roster_.get(i);
-                if (player.score > winnerScore) {
-                    winnerScore = player.score;
+            // Determine the winner(s) by score, allowing for ties.
+            if (!isCancelled()) {
+                ArrayList<Player> winners = new ArrayList<>();
+                int winnerScore = 0;
+                for (int i = 0; i < gs.roster_.size(); i++) {
+                    Player player = gs.roster_.get(i);
+                    if (player.score > winnerScore) {
+                        winnerScore = player.score;
+                    }
                 }
+
+                for (int i = 0; i < gs.roster_.size(); i++) {
+                    Player player = gs.roster_.get(i);
+                    if (player.score == winnerScore)
+                        winners.add(player);
+                }
+
+                StringBuilder sb = new StringBuilder("");
+                for (int i = 0; i < winners.size(); i++) {
+                    if (i > 0)
+                        sb.append(", ");
+
+                    Player player = winners.get(i);
+                    sb.append(player.name);
+                }
+
+                if (winners.size() > 1)
+                    sb.append(" tie!");
+                else
+                    sb.append(" wins!");
+
+                publishProgress(sb.toString());
             }
-
-            for (int i = 0; i < gs.roster_.size(); i++) {
-                Player player = gs.roster_.get(i);
-                if (player.score == winnerScore)
-                    winners.add(player);
-            }
-
-            StringBuilder sb = new StringBuilder("");
-            for (int i = 0; i < winners.size(); i++) {
-                if (i > 0)
-                    sb.append(", ");
-
-                Player player = winners.get(i);
-                sb.append(player.name);
-            }
-
-            if (winners.size() > 1)
-                sb.append(" tie!");
-            else
-                sb.append(" wins!");
-
-            publishProgress(sb.toString());
 
             pause(10000);
 
-            Log.i("join", "Cleaning up");
+            Log.i("online", "leave and cleanup");
+            gs.done = true;
             try {
-                gs.sendLeaveMessage();
+                gs.leave();
                 Thread.sleep(10000);
                 gs.sync_.shutdown();
-                gs.done = true;
                 faceThread.interrupt();
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
+            Log.i("online", "end background thread");
             return null;
         }
 
         @Override
         protected void onProgressUpdate(String... message) {
+            // Show activity_joingame layout while searching for players.
             if (!start) {
                 StringBuilder sb = new StringBuilder("");
                 for (int i = 0; i < gs.roster_.size(); i++) {
@@ -409,6 +438,7 @@ public class JoinGameActivity extends ActionBarActivity {
                 return;
             }
 
+            // Switch to activity_newgame layout after players have been found.
             if (!switched) {
                 setContentView(R.layout.activity_newgame);
 
@@ -451,8 +481,8 @@ public class JoinGameActivity extends ActionBarActivity {
 
             tv_remain.setText(remainingString);
 
+            // Enable the input button and update the Player object when input is received.
             if (waitForInput == UserInputType.WORD) {
-                Log.i("join", "Guess button enabled");
                 btn_guess.setEnabled(true);
                 btn_guess.setOnClickListener(new View.OnClickListener() {
                     @Override

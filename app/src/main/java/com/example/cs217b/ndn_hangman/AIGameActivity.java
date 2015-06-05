@@ -28,6 +28,9 @@ public class AIGameActivity extends ActionBarActivity {
     private final int numberOfPlayers = 4;
     private final int numberOfChances = 6;
     private Context context;
+    private enum UserInputType {NONE, WORD, LETTER}
+    private GameTask gameTask;
+    // activity_newgame layout
     private TextView tv_score;
     private TextView tv_status;
     private TextView tv_letters;
@@ -35,8 +38,6 @@ public class AIGameActivity extends ActionBarActivity {
     private ImageView img_man;
     private Button btn_guess;
     private int[] hangmanImages;
-    private enum UserInputType {NONE, WORD, LETTER}
-    private GameTask gameTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +77,9 @@ public class AIGameActivity extends ActionBarActivity {
             gameTask.cancel(true);
     }
 
+    /**
+     * This class allows game logic to run in the background while updating the UI.
+     */
     public class GameTask extends AsyncTask<Void, String, Void> {
         private final String allAvailableLetters = "abcdefghijklmnopqrstuvwxyz";
         private final String allLettersSpaces =
@@ -126,7 +130,7 @@ public class AIGameActivity extends ActionBarActivity {
 
                 // Prompt the drawer to choose a word.
                 Player drawer = players.get(currentDrawerIndex);
-                Log.i("ai_game", "drawer=" + drawer.name + " [" + currentDrawerIndex + "]");
+                Log.i("ai", "drawer=" + drawer.name + " [" + currentDrawerIndex + "]");
                 publishProgress(drawer.name + "'s turn to choose a word.");
                 drawer.setTurn(true);
                 while(drawer.isThinking()) {
@@ -138,7 +142,7 @@ public class AIGameActivity extends ActionBarActivity {
                 Arrays.fill(tmpArray, '_');
                 hangmanBuilder = new StringBuilder(new String(tmpArray));
                 remainingString = allLettersSpaces;
-                Log.i("ai_game", "word=" + chosenWord + " (" + chosenWord.length() + ")");
+                Log.i("ai", "word=" + chosenWord + " (" + chosenWord.length() + ")");
                 publishProgress(drawer.name + " chose a " + chosenWord.length() + "-letter word.");
 
                 // Loop through remaining players for guesses until word is guessed or chances
@@ -149,12 +153,12 @@ public class AIGameActivity extends ActionBarActivity {
                         continue;
 
                     guessNum++;
-                    Log.i("ai_game", "roundNum=" + roundNum + " guessNum=" + guessNum);
+                    Log.i("ai", "roundNum=" + roundNum + " guessNum=" + guessNum);
 
                     // Prompt the guesser to choose a letter.
                     Player guesser = players.get(currentGuesserIndex);
                     pause(500);
-                    Log.i("ai_game", "guesser=" + guesser.name + " [" + currentGuesserIndex + "]");
+                    Log.i("ai", "guesser=" + guesser.name + " [" + currentGuesserIndex + "]");
                     publishProgress(guesser.name + "'s turn to guess.");
                     guesser.setTurn(true);
                     while(guesser.isThinking()) {
@@ -169,7 +173,7 @@ public class AIGameActivity extends ActionBarActivity {
                     int points = count * 100;
                     guesser.score += points;
                     remainingWord = updatedWord;
-                    Log.i("ai_game", "guess=" + guessString + " count=" + count + " remainder=" +
+                    Log.i("ai", "guess=" + guessString + " count=" + count + " remainder=" +
                             remainingWord);
 
                     // Update the underscored word by filling in the new letter.
@@ -253,7 +257,7 @@ public class AIGameActivity extends ActionBarActivity {
                 publishProgress(sb.toString());
             }
 
-            Log.i("ai_game", "end background thread");
+            Log.i("ai", "end background thread");
             return null;
         }
 

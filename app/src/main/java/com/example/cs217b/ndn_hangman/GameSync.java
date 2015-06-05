@@ -16,6 +16,10 @@ import java.util.List;
 import java.util.logging.*;
 import java.util.Random;
 
+/**
+ * This class is used to synchronize the data between players. Code based on TestChronoChat.java at
+ * https://github.com/named-data/jndn/blob/master/examples/src/net/named_data/jndn/tests/
+ */
 public class GameSync implements ChronoSync2013.OnInitialized,
         ChronoSync2013.OnReceivedSyncState, OnData, OnInterestCallback {
     private final double syncLifetime_ = 5000.0; // milliseconds
@@ -51,7 +55,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                             new Name("/ndn/edu/ucla/hangman/broadcast").append(gameName_),
                             sessionNo_, face_, keyChain_, certificateName_, syncLifetime_,
                             RegisterFailed.onRegisterFailed_);
-            Log.i("gamesync", "[GameSync] ChronoSync object created");
+            Log.i("sync", "[GameSync] ChronoSync object created");
         } catch (Exception ex) {
             Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
             return;
@@ -64,12 +68,10 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         }
     }
 
-    // initial: push the JOIN message in to the messageCache_, update roster and
+    // Push the JOIN message in to the messageCache_, update roster and
     // start the heartbeat.
-    // (Do not call this. It is only public to implement the interface.)
     @Override
-    public final void
-    onInitialized()
+    public final void onInitialized()
     {
         // Set the heartbeat timeout using the Interest timeout mechanism. The
         // heartbeat() function will call itself again after a timeout.
@@ -77,7 +79,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         timeout.setInterestLifetimeMilliseconds(60000);
         try {
             face_.expressInterest(timeout, DummyOnData.onData_, heartbeat_);
-            Log.i("gamesync", "[onInitialized] heartbeat timeout set");
+            Log.i("sync", "[onInitialized] heartbeat timeout set");
         } catch (IOException ex) {
             Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
             return;
@@ -85,18 +87,18 @@ public class GameSync implements ChronoSync2013.OnInitialized,
 
         roster_.add(new NetPlayer(playerName_, sessionNo_, sid_, true));
         try {
-            sendJoinMessage();
+            join();
         } catch (Exception e) {
-            Log.i("gamesync", "[onInitialized] exception: " + e.getMessage());
+            Log.i("sync", "[onInitialized] exception: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    @Override
     // Process the incoming Chat data.
     // (Do not call this. It is only public to implement the interface.)
-    public final void
-    onData(Interest interest, Data data) {
+    @Override
+    public final void onData(Interest interest, Data data)
+    {
         Messages content;
         try {
             content = Messages.parseFrom(data.getContent().getImmutableArray());
@@ -113,11 +115,11 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         String word = content.getWord();
         Messages.MessageType type = content.getType();
 
-        Log.i("gamesync", "[onData] name=" + name + " prefix=" + prefix + " sid=" + sid +
+        Log.i("sync", "[onData] name=" + name + " prefix=" + prefix + " sid=" + sid +
                 " sessionNo=" + sessionNo + " sequenceNo=" + sequenceNo + " word=" + word +
                 " (" + type + ")");
 
-        // Update roster
+        // Update roster.
         int i;
         Player player = null;
         for (i = 0; i < roster_.size(); i++) {
@@ -136,11 +138,11 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         if (i == roster_.size() && type.equals(Messages.MessageType.JOIN)) {
             player = new NetPlayer(name, sessionNo, sid, false);
             roster_.add(player);
-            Log.i("gamesync", "[onData] added player=(" + name + ", " + sessionNo + ", " +
+            Log.i("sync", "[onData] added player=(" + name + ", " + sessionNo + ", " +
                     sid + ")");
         }
 
-        Log.i("gamesync", "[onData] roundNum=" + roundNum_ + " guessNum=" + guessNum_);
+        Log.i("sync", "[onData] roundNum=" + roundNum_ + " guessNum=" + guessNum_);
         if (type.equals(Messages.MessageType.EVAL) && !sid.equals(sid_)) {
             String[] parts = word.split("-");
             int roundNum = Integer.valueOf(parts[0]);
@@ -148,7 +150,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             String eval = parts[2];
             if (roundNum == roundNum_ && guessNum == guessNum_ && player.isThinking()) {
                 player.think(eval);
-                Log.i("gamesync", "[onData] drawer think");
+                Log.i("sync", "[onData] drawer think");
             }
         } else if (type.equals(Messages.MessageType.GUESS) && !sid.equals(sid_)) {
             String[] parts = word.split("-");
@@ -157,7 +159,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             char guess = parts[2].charAt(0);
             if (roundNum == roundNum_ && guessNum == guessNum_ && player.isThinking()) {
                 player.think(guess);
-                Log.i("gamesync", "[onData] guesser think");
+                Log.i("sync", "[onData] guesser think");
             }
         } else if (type.equals(Messages.MessageType.LEAVE)) {
             for (i = 0; i < roster_.size(); i++) {
@@ -165,7 +167,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                 if (player.name.equals(name) && player.sessionNo == sessionNo &&
                         player.sid.equals(sid)) {
                     roster_.remove(i);
-                    Log.i("gamesync", "[onData] removed player=(" + player.name + ", " +
+                    Log.i("sync", "[onData] removed player=(" + player.name + ", " +
                             player.sessionNo + ", " + player.sid + ")");
                     break;
                 }
@@ -185,15 +187,13 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         }
     }
 
-    @Override
     // Send back a Chat Data Packet which contains the user's message.
     // (Do not call this. It is only public to implement the interface.)
-    public final void
-    onInterest
-            (Name prefix, Interest interest, Face face, long interestFilterId,
+    @Override
+    public final void onInterest(Name prefix, Interest interest, Face face, long interestFilterId,
              InterestFilter filter)
     {
-        Log.i("gamesync", "[onInterest] interest=" + interest.getName().toUri());
+        Log.i("sync", "[onInterest] interest=" + interest.getName().toUri());
         Messages.Builder builder = Messages.newBuilder();
         long sequenceNo = Long.parseLong(interest.getName().get(gamePrefix_.size() + 1).toEscapedString());
         boolean gotContent = false;
@@ -234,7 +234,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                     builder.setTimestamp((int) Math.round(message.getTime() / 1000.0));
                 }
                 gotContent = true;
-                Log.i("gamesync", "[onInterest] " + message.getMessage() + " (" + message.getMessageType() + ")");
+                Log.i("sync", "[onInterest] " + message.getMessage() + " (" + message.getMessageType() + ")");
                 break;
             }
         }
@@ -252,7 +252,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             }
             try {
                 face.putData(data);
-                Log.i("gamesync", "[onInterest] content name=" + content.getName() + " word=" +
+                Log.i("sync", "[onInterest] content name=" + content.getName() + " word=" +
                         content.getWord() + " (" + content.getType() + ")");
             } catch (IOException ex) {
                 Logger.getLogger(GameSync.class.getName()).log(Level.SEVERE, null, ex);
@@ -263,7 +263,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     @Override
     public final void
     onReceivedSyncState(List syncStates, boolean isRecovery) {
-        Log.i("gamesync", "[onReceivedSyncState] isRecovery=" + ((isRecovery) ? "true" : "false"));
+        Log.i("sync", "[onReceivedSyncState] isRecovery=" + ((isRecovery) ? "true" : "false"));
         ArrayList<String> sendList = new ArrayList<>();
         ArrayList<Long> sessionNoList = new ArrayList<>();
         ArrayList<Long> sequenceNoList = new ArrayList<>();
@@ -296,7 +296,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                     "/" + sequenceNoList.get(i);
             Interest interest = new Interest(new Name(uri));
             interest.setInterestLifetimeMilliseconds(syncLifetime_);
-            Log.i("gamesync", "[onReceivedSyncState] express interest uri=" + uri);
+            Log.i("sync", "[onReceivedSyncState] express interest uri=" + uri);
             try {
                 face_.expressInterest(interest, this, SyncTimeout.onTimeout_);
             } catch (IOException ex) {
@@ -309,7 +309,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     private static class SyncTimeout implements OnTimeout {
         public final void
         onTimeout(Interest interest) {
-            Log.i("gamesync", "[SyncTimeout] timed out interest=" + interest.toUri());
+            Log.i("sync", "[SyncTimeout] timed out interest=" + interest.toUri());
         }
 
         public final static OnTimeout onTimeout_ = new SyncTimeout();
@@ -324,7 +324,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
     private class Heartbeat implements OnTimeout {
         public final void
         onTimeout(Interest interest) {
-            Log.i("gamesync", "[Heartbeat] timed out");
+            Log.i("sync", "[Heartbeat] timed out");
             if (messageCache_.size() == 0)
                 messageCacheAppend(Messages.MessageType.JOIN, "xxx");
 
@@ -336,10 +336,10 @@ public class GameSync implements ChronoSync2013.OnInitialized,
             }
             messageCacheAppend(Messages.MessageType.HELLO, "xxx");
 
-            // Call again if necessary
+            // Call again if necessary.
             if (!done) {
                 Interest timeout = new Interest(new Name("/local/timeout"));
-                timeout.setInterestLifetimeMilliseconds(30000);
+                timeout.setInterestLifetimeMilliseconds(15000);
                 try {
                     face_.expressInterest(timeout, DummyOnData.onData_, heartbeat_);
                 } catch (Exception ex) {
@@ -368,7 +368,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         onTimeout(Interest interest)
         {
             long sequenceNo = sync_.getProducerSequenceNo(prefix_, sessionNo_);
-            Log.i("gamesync", "[Alive] tempSequenceNo_=" + tempSequenceNo_ +
+            Log.i("sync", "[Alive] tempSequenceNo_=" + tempSequenceNo_ +
                     " name=" + name_ + " sessionNo_=" + sessionNo_ + " prefix_=" + prefix_);
             if (sequenceNo == -1 || tempSequenceNo_ != sequenceNo)
                 return;
@@ -377,7 +377,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
                 Player player = roster_.get(i);
                 if (player.sessionNo == sessionNo_ && player.name.equals(name_)) {
                     roster_.remove(i);
-                    Log.i("gamesync", "[Alive] removed player=(" + player.name + ", " +
+                    Log.i("sync", "[Alive] removed player=(" + player.name + ", " +
                             player.sessionNo + ", " + player.sid + ")");
                     break;
                 }
@@ -394,7 +394,7 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         public final void
         onRegisterFailed(Name prefix)
         {
-            Log.i("gamesync", "[RegisterFailed] prefix=" + prefix.toUri());
+            Log.i("sync", "[RegisterFailed] prefix=" + prefix.toUri());
         }
 
         public final static OnRegisterFailed onRegisterFailed_ = new RegisterFailed();
@@ -437,54 +437,56 @@ public class GameSync implements ChronoSync2013.OnInitialized,
         private final double time_;
     }
 
-    // Send a join message
+    // Publish a join message.
     public final void
-    sendJoinMessage() throws IOException, SecurityException
+    join() throws IOException, SecurityException
     {
         sync_.publishNextSequenceNo();
         messageCacheAppend(Messages.MessageType.JOIN, "xxx");
-        Log.i("gamesync", "[sendJoinMessage]");
+        Log.i("sync", "[join]");
     }
 
-    // Send a guess message
+    // Publish a guess message.
     public final void
-    sendGuessMessage(String guess) throws IOException, SecurityException
+    guess(String guess) throws IOException, SecurityException
     {
         sync_.publishNextSequenceNo();
         messageCacheAppend(Messages.MessageType.GUESS, guess);
-        Log.i("gamesync", "[sendGuessMessage] guess=" + guess);
+        Log.i("sync", "[guess] " + guess);
     }
 
-    // Send an eval message
+    // Publish an eval message.
     public final void
-    sendEvalMessage(String eval) throws  IOException, SecurityException
+    eval(String eval) throws  IOException, SecurityException
     {
         sync_.publishNextSequenceNo();
         messageCacheAppend(Messages.MessageType.EVAL, eval);
-        Log.i("gamesync", "[sendEvalMessage] eval=" + eval);
+        Log.i("sync", "[eval] " + eval);
     }
 
-    // Send a leave message
+    // Publish a leave message.
     public final void
-    sendLeaveMessage() throws IOException, SecurityException
+    leave() throws IOException, SecurityException
     {
         sync_.publishNextSequenceNo();
         messageCacheAppend(Messages.MessageType.LEAVE, "xxx");
-        Log.i("gamesync", "[sendLeaveMessage]");
+        Log.i("sync", "[leave]");
     }
 
+    //
     private void
     messageCacheAppend(MessageBuffer.Messages.MessageType messageType, String message)
     {
         final int maxMessageCacheLength = 100;
         messageCache_.add(new CachedMessage(sync_.getSequenceNo(), messageType, message,
                 getNowMilliseconds()));
-        Log.i("gamesync", "[messageCacheAppend] " + message + " (" + messageType + ")" + "[" +
+        Log.i("sync", "[messageCacheAppend] " + message + " (" + messageType + ")" + "[" +
                 messageCache_.size() + "]");
         while (messageCache_.size() > maxMessageCacheLength)
             messageCache_.remove(0);
     }
 
+    // Get random String for user identification.
     private static String
     getRandomString()
     {
