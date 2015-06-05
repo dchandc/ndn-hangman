@@ -40,7 +40,7 @@ public class OnlineGameActivity extends ActionBarActivity {
     private final int numberOfPlayers = 3;
     private final int numberOfChances = 6;
     private Context context;
-    private enum UserInputType {NONE, WORD, LETTER};
+    private enum UserInputType {NONE, WORD, LETTER}
     private GameTask gameTask;
     // activity_joingame layout
     private EditText etv_name;
@@ -285,7 +285,7 @@ public class OnlineGameActivity extends ActionBarActivity {
                             pause(250);
                         }
                         guess = guesser.inputLetter(null);
-                        guessString = (new Character(guess)).toString();
+                        guessString = Character.valueOf(guess).toString();
                         try {
                             gs.guess(gs.roundNum_ + "-" + gs.guessNum_ +
                                     "-" + guessString);
@@ -297,7 +297,7 @@ public class OnlineGameActivity extends ActionBarActivity {
                             pause(250);
                         }
                         guess = guesser.inputLetter(null);
-                        guessString = (new Character(guess)).toString();
+                        guessString = Character.valueOf(guess).toString();
                     }
                     remainingString = remainingString.replace(guessString + " ", "");
                     Log.i("online", "guess=" + guessString);
@@ -467,7 +467,8 @@ public class OnlineGameActivity extends ActionBarActivity {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < gs.roster_.size(); i++) {
                 Player player = gs.roster_.get(i);
-                sb.append(player.name + ": " + player.score + "\n");
+                String str = player.name + ": " + player.score + "\n";
+                sb.append(str);
             }
 
             tv_score.setText(sb.toString());
